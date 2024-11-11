@@ -23,7 +23,21 @@ exports.login = async (req, res) => {
   }
 };
 
+exports.logout = async (req, res) => {
+  res.json({  });
+};
+
 exports.getUser = async (req, res) => {
   const user = await User.findById(req.user.userId);
   res.json({ user });
 };
+
+exports.add = async (req, res) => {
+  res.json({  });
+};
+
+
+exports.redeem = async (req, res) => {
+  res.json({  });
+};
+
