@@ -1,43 +1,41 @@
-// controllers/userController.js
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const User = require('../models/userModel');
+// API ROUTE: ./api/users
+const bcrypt = require('bcryptjs')
+const jwt = require('jsonwebtoken')
+const User = require('../models/user')
+const sequelize = require('../db')
 
-exports.register = async (req, res) => {
-  const { username, password } = req.body;
-  const passwordHash = await bcrypt.hash(password, 10);
-  const userId = await User.create(username, passwordHash);
-  res.status(201).json({ userId });
-};
-
-exports.login = async (req, res) => {
-  const { username, password } = req.body;
-  const user = await User.findByUsername(username);
-  if (user && (await bcrypt.compare(password, user.password))) {
-    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, {
-      expiresIn: '1h'
-    });
-    res.json({ token });
-  } else {
-    res.status(401).json({ message: 'Invalid credentials' });
+// Get all users
+exports.getAllUsers = async (req, res) => {
+  try {
+    const users = await User.findAll();
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ error: 'Error fetching users' });
   }
 };
 
-exports.logout = async (req, res) => {
-  res.json({  });
+// Get a single user by ID
+exports.getUserById = async (req, res) => {
+  try {
+    const user = await User.findByPk(req.params.id);
+    if (user) {
+      res.json(user);
+    } else {
+      res.status(404).json({ error: 'User not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ error: 'Error fetching user' });
+  }
 };
 
-exports.getUser = async (req, res) => {
-  const user = await User.findById(req.user.userId);
-  res.json({ user });
+// Create a new user
+exports.registerUser = async (req, res) => {
+  try {
+    console.log(req.body)
+    const { fname, lname, email, password } = req.body;
+    const newUser = await User.create({ fname, lname, email, password });
+    res.status(201).json(newUser);
+  } catch (error) {
+    res.status(500).json({ error: `${error}` });
+  }
 };
-
-exports.add = async (req, res) => {
-  res.json({  });
-};
-
-
-exports.redeem = async (req, res) => {
-  res.json({  });
-};
-
