@@ -54,7 +54,10 @@ const User = sequelize.define('User',
     },
     points: {
       type: DataTypes.INTEGER,
-      defaultValue: 0
+      defaultValue: 0,
+      validate: {
+        min: 0
+      }
     },
     business_id: {
       type: DataTypes.INTEGER,
