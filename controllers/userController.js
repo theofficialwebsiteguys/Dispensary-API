@@ -32,11 +32,11 @@ exports.getUserById = async (req, res) => {
 exports.registerUser = async (req, res) => {
   try {
     console.log(req.body)
-    let { fname, lname, email, phone, password, points, business_id } = req.body;
+    let { fname, lname, email, dob, phone, password, points, business_id, referred_by } = req.body;
 
     (points != null && points < 0) ? points = 0 : points = points // handle invalid points input
 
-    const newUser = await User.create({ fname, lname, email, phone, password, points, business_id });
+    const newUser = await User.create({ fname, lname, email, dob, phone, password, points, business_id, referred_by });
 
     res.status(201).json(newUser);
   } catch (error) {
