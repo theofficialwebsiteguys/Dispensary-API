@@ -3,8 +3,10 @@ require('dotenv').config()
 const express = require('express')
 const sequelize = require('./db')
 
-const userRoutes = require('./routes/userRoutes')
+
 const businessRoutes = require('./routes/businessRoutes')
+const referralRoutes = require('./routes/referralRoutes')
+const userRoutes = require('./routes/userRoutes')
 
 const app = express()
 
@@ -12,8 +14,10 @@ const app = express()
 app.use(express.json())
 
 // Routes - mounting /api/users to all userRoutes in userRoutes.js
-app.use('/api/users', userRoutes)
 app.use('/api/businesses', businessRoutes)
+app.use('/api/referrals', referralRoutes)
+app.use('/api/users', userRoutes)
+
 
 sequelize.authenticate()
   .then(() => {

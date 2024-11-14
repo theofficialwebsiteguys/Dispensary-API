@@ -1,7 +1,7 @@
 // USER MODEL DEFINITION
 const sequelize = require('../db')
-const { DataTypes } = require('sequelize');
-const Business = require('./business');
+const { DataTypes } = require('sequelize')
+const Business = require('./business')
 
 const User = sequelize.define('User', 
   {
@@ -41,9 +41,9 @@ const User = sequelize.define('User',
       unique: true,
       validate: {
         isPhoneNumber(value) {
-          const phoneRegex = /^[+]?[(]?[0-9]{1,4}[)]?[-\s./0-9]*$/;
+          const phoneRegex = /^[+]?[(]?[0-9]{1,4}[)]?[-\s./0-9]*$/
           if (!phoneRegex.test(value)) {
-            throw new Error('Phone number is invalid');
+            throw new Error('Phone number is invalid')
           }
         },
       },
@@ -81,6 +81,6 @@ const User = sequelize.define('User',
   {
     timestamps: true
   }
-);
+)
 
-module.exports = User;
+module.exports = User
