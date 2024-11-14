@@ -26,6 +26,15 @@ const User = sequelize.define('User',
         isEmail: true,
       },
     },
+    dob: {
+      type: DataTypes.DATE, // Store date of birth
+      allowNull: false, // Make it required
+      validate: {
+        isDate: {
+          msg: 'Please provide a valid date for the date of birth',
+        },
+      },
+    },
     phone: {
       type: DataTypes.STRING,
       allowNull: false,
@@ -56,6 +65,17 @@ const User = sequelize.define('User',
       },
       onUpdate: 'CASCADE',
       onDelete: 'SET NULL'
+    },
+    referred_by: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'Users', // This refers to the `Users` table itself
+        key: 'id', // We reference the `id` column of the `Users` table
+      },
+      validate: {
+        isInt: true
+      }
     }
   },
   {
