@@ -1,12 +1,9 @@
 const sequelize = require('../db')
 const { DataTypes } = require('sequelize')
 
-// Import models
 const Business = require('./business')
 const Referral = require('./referral')
 const User = require('./user')
-
-// Set up associations
 
 // FK for business_id on User model
 User.belongsTo(Business, { foreignKey: 'business_id' })
@@ -21,7 +18,7 @@ Referral.belongsTo(User, { foreignKey: 'user_id', as: 'referrer' })
 User.hasMany(Referral, { foreignKey: 'referrer_id', as: 'referrals' })
 
 // Sync all models with the database
-sequelize.sync({ force: true }) // Set to `true` only in development, to drop and recreate tables
+sequelize.sync({ alter: true }) // change to force: true to drop all data and tables and recreate based on model definitions
   .then(() => {
     console.log('Database & tables synced successfully')
   })
