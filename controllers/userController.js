@@ -10,7 +10,7 @@ exports.getAllUsers = async (req, res) => {
     const users = await User.findAll();
     res.json(users);
   } catch (error) {
-    res.status(500).json({ error: 'Error fetching users' });
+    res.status(500).json({ error: `Error fetching users: ${error}` });
   }
 };
 
@@ -24,7 +24,7 @@ exports.getUserById = async (req, res) => {
       res.status(404).json({ error: 'User not found' });
     }
   } catch (error) {
-    res.status(500).json({ error: 'Error fetching user' });
+    res.status(500).json({ error: `Error fetching user: ${error}` });
   }
 };
 
@@ -32,8 +32,12 @@ exports.getUserById = async (req, res) => {
 exports.registerUser = async (req, res) => {
   try {
     console.log(req.body)
-    const { fname, lname, email, password } = req.body;
-    const newUser = await User.create({ fname, lname, email, password });
+    let { fname, lname, email, phone, password, points, business_id } = req.body;
+
+    (points != null && points < 0) ? points = 0 : points = points // handle invalid points input
+
+    const newUser = await User.create({ fname, lname, email, phone, password, points, business_id });
+
     res.status(201).json(newUser);
   } catch (error) {
     res.status(500).json({ error: `${error}` });
