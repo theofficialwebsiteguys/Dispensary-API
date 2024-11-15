@@ -27,8 +27,8 @@ const User = sequelize.define('User',
       },
     },
     dob: {
-      type: DataTypes.DATE, // Store date of birth
-      allowNull: false, // Make it required
+      type: DataTypes.DATE,
+      allowNull: false,
       validate: {
         isDate: {
           msg: 'Please provide a valid date for the date of birth',
