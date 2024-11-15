@@ -1,5 +1,4 @@
 const bcrypt = require('bcryptjs')
-
 const Business = require('../models/business')
 const Referral = require('../models/referral')
 const User = require('../models/user')
@@ -24,7 +23,7 @@ async function findReferralByEmail(email) {
       throw error
     }
 }
-  
+
 
 async function findReferralByPhone(phone) {
     try {
@@ -57,7 +56,7 @@ async function hashUserPassword(pw) {
     console.error('Error hashing password:', error)
   }
 }
-  
+
 
 async function incrementUserPoints(userId, amount) {
     try {

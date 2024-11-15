@@ -79,6 +79,11 @@ const User = sequelize.define('User',
       validate: {
         isInt: true
       }
+    },
+    allow_notifications: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true
     }
   },
   {
