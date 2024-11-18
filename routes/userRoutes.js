@@ -1,6 +1,6 @@
 // ./api/users
 
-const express = require('express');
+const express = require('express')
 const userController = require('../controllers/userController')
 const authMiddleware = require('../middleware/authMiddleware')
 
@@ -11,5 +11,6 @@ router.get('/id/:id', userController.getUserById)
 router.post('/register', userController.registerUser)
 router.delete('/delete/:id', userController.deleteUser)
 router.put('/add-points', userController.addPoints)
+router.put('/redeem-points', userController.redeemPoints)
 
-module.exports = router;
+module.exports = router

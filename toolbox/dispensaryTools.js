@@ -51,7 +51,7 @@ async function hashUserPassword(pw) {
     const saltRounds = 10
     const hashedPassword = await bcrypt.hash(pw, saltRounds)
 
-    return hashedPassword;
+    return hashedPassword
   } catch (error) {
     console.error('Error hashing password:', error)
   }
@@ -63,7 +63,7 @@ async function incrementUserPoints(userId, amount) {
       let amountNumber = Number(amount)
       let points = Math.floor(amountNumber)
       await User.increment(
-          { points: points }, // Field and amount to increment
+          { points: points },
           { where: { id: userId } }
         )
       return points
@@ -74,9 +74,26 @@ async function incrementUserPoints(userId, amount) {
 }
 
 
+async function decrementUserPoints(userId, amount) {
+  try {
+    let amountNumber = Number(amount)
+    let points = Math.floor(amountNumber)
+    await User.decrement(
+        { points: points }, // Field and amount to increment
+        { where: { id: userId } }
+      )
+    return points
+  } catch (error) {
+    console.error('Error decrementing user points:', error)
+    return -1
+  }
+}
+
+
 module.exports = {
   findReferralByEmail,
   findReferralByPhone,
   hashUserPassword,
+  decrementUserPoints,
   incrementUserPoints
 }

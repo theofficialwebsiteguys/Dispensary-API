@@ -103,3 +103,15 @@ exports.addPoints = async (req, res) => {
     res.status(500).json({ error: `Error adding points: ${error}` })
   }
 }
+
+
+exports.redeemPoints = async (req, res) => {
+  let { userId, amount } = req.body
+  try {
+    let result = await dt.decrementUserPoints(userId, amount)
+    res.status(200).json({userId: `${userId}`, points_redeemed: `${result}` })
+  }
+  catch (error) {
+    res.status(500).json({ error: `Error redeeming points: ${error}` })
+  }
+}
