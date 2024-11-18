@@ -1,4 +1,5 @@
 const bcrypt = require('bcryptjs')
+
 const Business = require('../models/business')
 const Referral = require('../models/referral')
 const User = require('../models/user')

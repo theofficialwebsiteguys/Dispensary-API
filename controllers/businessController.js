@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken')
 const Business = require('../models/business')
 const sequelize = require('../db')
 
-// Get all businesses
+
 exports.getAllBusinesses = async (req, res) => {
   try {
     const businesses = await Business.findAll();
@@ -14,7 +14,7 @@ exports.getAllBusinesses = async (req, res) => {
   }
 };
 
-// Get a single business by ID
+
 exports.getBusinessById = async (req, res) => {
   try {
     const business = await Business.findByPk(req.params.id);
@@ -28,7 +28,7 @@ exports.getBusinessById = async (req, res) => {
   }
 };
 
-// Create a new business
+
 exports.registerBusiness = async (req, res) => {
   try {
     console.log(req.body)
