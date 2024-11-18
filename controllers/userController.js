@@ -40,29 +40,29 @@ exports.registerUser = async (req, res) => {
 
     await dt.findReferralByEmail(email)
       .then(referral => {
-        if(referral) {
-          referral_obj = referral
-          referred_by = referral.dataValues.referrer_id
-        }
-      })
-  
-    await dt.findReferralByPhone(phone)
-      .then(referral => {
-        if(referral) {
+        if (referral) {
           referral_obj = referral
           referred_by = referral.dataValues.referrer_id
         }
       })
 
-    const newUser = await User.create({ fname, lname, email, dob, phone, password:pw, points, business_id, referred_by })
+    await dt.findReferralByPhone(phone)
+      .then(referral => {
+        if (referral) {
+          referral_obj = referral
+          referred_by = referral.dataValues.referrer_id
+        }
+      })
+
+    const newUser = await User.create({ fname, lname, email, dob, phone, password: pw, points, business_id, referred_by })
 
     // handle the flow for updates if there is a referral
     if (referral_obj) {
       await dt.incrementUserPoints(newUser.dataValues.id, 200)
       await dt.incrementUserPoints(referred_by, 200)
       await referral_obj.update(
-        {referral_converted: true},
-        {where: {id: referral_obj.dataValues.id}}
+        { referral_converted: true },
+        { where: { id: referral_obj.dataValues.id } }
       )
     }
 
@@ -93,3 +93,13 @@ exports.deleteUser = async (req, res) => {
 }
 
 
+exports.addPoints = async (req, res) => {
+  let { userId, amount } = req.body
+  try {
+    let result = await dt.incrementUserPoints(userId, amount)
+    res.status(200).json({userId: `${userId}`, points_added: `${result}` })
+  }
+  catch (error) {
+    res.status(500).json({ error: `Error adding points: ${error}` })
+  }
+}

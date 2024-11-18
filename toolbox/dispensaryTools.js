@@ -60,12 +60,16 @@ async function hashUserPassword(pw) {
 
 async function incrementUserPoints(userId, amount) {
     try {
+      let amountNumber = Number(amount)
+      let points = Math.floor(amountNumber)
       await User.increment(
-        { points: amount }, // Field and amount to increment
-        { where: { id: userId } }
-      )
+          { points: points }, // Field and amount to increment
+          { where: { id: userId } }
+        )
+      return points
     } catch (error) {
       console.error('Error incrementing user points:', error)
+      return -1
     }
 }
 
