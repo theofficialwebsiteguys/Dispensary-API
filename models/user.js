@@ -96,11 +96,11 @@ const User = sequelize.define('User',
 )
 
 User.beforeCreate(async (user) => {
-  user.phoneNumber = formatPhoneNumber(user.phone, user.country)
+  user.phone = formatPhoneNumber(user.phone, user.country)
 })
 
 User.beforeUpdate(async (user) => {
-  user.phoneNumber = formatPhoneNumber(user.phone, user.country)
+  user.phone = formatPhoneNumber(user.phone, user.country)
 })
 
 
