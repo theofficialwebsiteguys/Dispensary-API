@@ -2,6 +2,8 @@
 const sequelize = require('../db')
 const { DataTypes } = require('sequelize')
 const Business = require('./business')
+const { isValidPhoneNumber, formatPhoneNumber } = require('../validators/phoneNumber')
+
 
 const User = sequelize.define('User', 
   {
@@ -35,17 +37,19 @@ const User = sequelize.define('User',
         },
       },
     },
+    country: {
+      type: DataTypes.STRING,
+      defaultValue: 'US'
+    },
     phone: {
       type: DataTypes.STRING,
       allowNull: false,
       unique: true,
       validate: {
-        isPhoneNumber(value) {
-          const phoneRegex = /^[+]?[(]?[0-9]{1,4}[)]?[-\s./0-9]*$/
-          if (!phoneRegex.test(value)) {
-            throw new Error('Phone number is invalid')
-          }
-        },
+        isValidPhoneNumber(value) {
+          const countryCode = this.country || 'US'
+          isValidPhoneNumber(value, countryCode)
+        }
       },
     },
     password: {
@@ -90,5 +94,14 @@ const User = sequelize.define('User',
     timestamps: true
   }
 )
+
+User.beforeCreate(async (user) => {
+  user.phone = formatPhoneNumber(user.phone, user.country)
+})
+
+User.beforeUpdate(async (user) => {
+  user.phone = formatPhoneNumber(user.phone, user.country)
+})
+
 
 module.exports = User

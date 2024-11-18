@@ -49,7 +49,7 @@ exports.getUserByEmail = async (req, res) => {
 exports.registerUser = async (req, res) => {
   console.log(req.body)
   try {
-    let { fname, lname, email, dob, phone, password, points, business_id } = req.body
+    let { fname, lname, email, dob, country, phone, password, points, business_id } = req.body
     let referred_by = null
     let referral_obj = null
     let pw = await dt.hashUserPassword(password)
@@ -70,7 +70,7 @@ exports.registerUser = async (req, res) => {
         }
       })
 
-    const newUser = await User.create({ fname, lname, email, dob, phone, password: pw, points, business_id, referred_by })
+    const newUser = await User.create({ fname, lname, email, dob, phone, password: pw, points, business_id, referred_by }, {validate: true, countryCode: country})
 
     // handle the flow for updates if there is a referral
     if (referral_obj) {
