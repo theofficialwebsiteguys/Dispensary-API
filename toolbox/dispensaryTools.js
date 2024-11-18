@@ -1,9 +1,7 @@
 const bcrypt = require('bcryptjs')
-
 const Business = require('../models/business')
 const Referral = require('../models/referral')
 const User = require('../models/user')
-
 
 
 async function findReferralByEmail(email) {
@@ -25,7 +23,7 @@ async function findReferralByEmail(email) {
       throw error
     }
 }
-  
+
 
 async function findReferralByPhone(phone) {
     try {
@@ -37,10 +35,8 @@ async function findReferralByPhone(phone) {
       })
   
       if (referral) {
-        console.log('Referral found:', referral)
         return referral
       } else {
-        console.log('No referral found with that phone')
         return null
       }
     } catch (error) {
@@ -51,9 +47,16 @@ async function findReferralByPhone(phone) {
 
 
 async function hashUserPassword(pw) {
+  try {
+    const saltRounds = 10
+    const hashedPassword = await bcrypt.hash(pw, saltRounds)
 
+    return hashedPassword;
+  } catch (error) {
+    console.error('Error hashing password:', error)
+  }
 }
-  
+
 
 async function incrementUserPoints(userId, amount) {
     try {
