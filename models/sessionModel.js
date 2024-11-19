@@ -3,7 +3,7 @@ const sequelize = require('../db'); // Replace with your Sequelize instance
 const User = require('./user'); // Replace with your User model
 const Business = require('./business'); // Replace with your Business model
 
-const Session = sequelize.define('Session', {
+const Session = sequelize.define('Sessions', {
     sessionId: {
         type: DataTypes.UUID,
         defaultValue: DataTypes.UUIDV4,
