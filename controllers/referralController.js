@@ -29,7 +29,6 @@ exports.getReferralById = async (req, res) => {
 
 exports.referUser = async (req, res) => {
   try {
-    console.log(req.body)
     let { referrer_id, referred_email, referred_phone } = req.body
 
     if (referred_email) {
