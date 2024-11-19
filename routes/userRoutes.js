@@ -14,5 +14,6 @@ router.post('/register', userController.registerUser)
 router.delete('/delete/:id', userController.deleteUser)
 router.put('/add-points', userController.addPoints)
 router.put('/redeem-points', userController.redeemPoints)
+router.post('/login', userController.login)
 
 module.exports = router
