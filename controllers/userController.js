@@ -45,6 +45,24 @@ exports.getUserByEmail = async (req, res) => {
   }
 }
 
+exports.getUserByPhone = async (req, res) => {
+  const { phone } = req.body
+  try {
+    const user = await User.findOne({
+      where: {
+        phone: phone,
+      },
+    })
+    if (user) {
+      res.json(user)
+    } else {
+      res.status(404).json({ error: 'User not found' })
+    }
+  } catch (error) {
+    res.status(500).json({ error: `Error fetching user: ${error}` })
+  }
+}
+
 
 exports.registerUser = async (req, res) => {
   try {
