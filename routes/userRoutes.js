@@ -1,15 +1,17 @@
-// routes/userRoutes.js
-const express = require('express');
-const userController = require('../controllers/userController');
-const authMiddleware = require('../middleware/authMiddleware');
+// ./api/users
 
-const router = express.Router();
+const express = require('express')
+const userController = require('../controllers/userController')
+const authMiddleware = require('../middleware/authMiddleware')
 
-router.post('/register', userController.register);
-router.post('/login', userController.login);
-router.post('/logout', userController.logout);
-router.get('/user', authMiddleware, userController.getUser);
-router.put('/add', userController.add);
-router.put('/redeem', userController.redeem);
+const router = express.Router()
 
-module.exports = router;
+router.get('/', userController.getAllUsers)
+router.get('/id/:id', userController.getUserById)
+router.get('/email', userController.getUserByEmail)
+router.post('/register', userController.registerUser)
+router.delete('/delete/:id', userController.deleteUser)
+router.put('/add-points', userController.addPoints)
+router.put('/redeem-points', userController.redeemPoints)
+
+module.exports = router
