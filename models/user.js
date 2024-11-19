@@ -23,7 +23,6 @@ const User = sequelize.define('User',
     email: {
       type: DataTypes.STRING,
       allowNull: false,
-      unique: true,
       validate: {
         isEmail: true,
       },
@@ -44,7 +43,6 @@ const User = sequelize.define('User',
     phone: {
       type: DataTypes.STRING,
       allowNull: false,
-      unique: true,
       validate: {
         isValidPhoneNumber(value) {
           const countryCode = this.country || 'US'
@@ -71,7 +69,7 @@ const User = sequelize.define('User',
         key: 'id',
       },
       onUpdate: 'CASCADE',
-      onDelete: 'SET NULL'
+      onDelete: 'SET NULL',
     },
     referred_by: {
       type: DataTypes.INTEGER,
@@ -91,7 +89,19 @@ const User = sequelize.define('User',
     }
   },
   {
-    timestamps: true
+    timestamps: true,
+    indexes: [
+      {
+        unique: true,
+        fields: ["email", "business_id"],
+        name: "unique_email_per_business"
+      },
+      {
+        unique: true,
+        fields: ["phone", "business_id"],
+        name: "unique_phone_per_business"
+      }
+    ]
   }
 )
 
