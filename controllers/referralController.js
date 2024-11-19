@@ -1,10 +1,8 @@
 // API ROUTE: ./api/referrals
-const bcrypt = require('bcryptjs')
-const jwt = require('jsonwebtoken')
-const Referral = require('../models/referral')
-const sequelize = require('../db')
 
-// Get all referrals
+const Referral = require('../models/referral')
+
+
 exports.getAllReferrals = async (req, res) => {
   try {
     const referrals = await Referral.findAll()
@@ -14,7 +12,7 @@ exports.getAllReferrals = async (req, res) => {
   }
 }
 
-// Get a single referral by ID
+
 exports.getReferralById = async (req, res) => {
   try {
     const referral = await Referral.findByPk(req.params.id)
@@ -28,7 +26,7 @@ exports.getReferralById = async (req, res) => {
   }
 }
 
-// Create a new referral
+
 exports.referUser = async (req, res) => {
   try {
     console.log(req.body)
