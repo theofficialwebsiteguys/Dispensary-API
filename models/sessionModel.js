@@ -1,9 +1,10 @@
-// models/sessionModel.js
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/db.js'); // Import your Sequelize instance
+const sequelize = require('../db'); // Replace with your Sequelize instance
+const User = require('./user'); // Replace with your User model
+const Business = require('./business'); // Replace with your Business model
 
 const Session = sequelize.define('Session', {
-    sessionID: {
+    sessionId: {
         type: DataTypes.UUID,
         defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
@@ -16,17 +17,21 @@ const Session = sequelize.define('Session', {
         type: DataTypes.INTEGER,
         allowNull: false,
         references: {
-            model: 'Users', // Reference to the User model
+            model: User,
             key: 'id',
         },
+        onUpdate: 'CASCADE',
+        onDelete: 'CASCADE',
     },
     businessProfileKey: {
-        type: DataTypes.UUID,
+        type: DataTypes.INTEGER,
         allowNull: false,
         references: {
-            model: 'BusinessProfiles', // Reference to the BusinessProfile model
+            model: Business,
             key: 'id',
         },
+        onUpdate: 'CASCADE',
+        onDelete: 'CASCADE',
     },
     createdAt: {
         type: DataTypes.DATE,
@@ -38,8 +43,8 @@ const Session = sequelize.define('Session', {
         allowNull: false,
     },
 }, {
-    timestamps: false, // Sequelize will not automatically add createdAt/updatedAt columns
-    tableName: 'sessions',
+    timestamps: false, // Do not add Sequelize's default timestamps
+    tableName: 'sessions', // Ensure table name matches your database
 });
 
 module.exports = Session;

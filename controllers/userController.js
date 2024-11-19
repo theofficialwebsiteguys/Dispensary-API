@@ -3,12 +3,14 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 const { validationResult, body } = require('express-validator');
-const { User, Session, BusinessProfile } = require('../models');
+const { User, Session, Business } = require('../models');
+const { Op } = require('sequelize');
+require('dotenv').config();
 
 const JWT_SECRET = process.env.JWT_SECRET
 const SESSION_EXPIRY_HOURS = 168; // e.g., 7 days
 // API ROUTE: ./api/users
-const User = require('../models/user')
+//const User = require('../models/user')
 const dt = require('../toolbox/dispensaryTools')
 
 
@@ -16,6 +18,7 @@ exports.login = [
   body('email').isEmail().withMessage('Invalid email format'),
   body('password').notEmpty().withMessage('Password is required'),
   body('businessId').notEmpty().withMessage('businessId is required'),
+  body('businessName').notEmpty().withMessage('businessName is required'),
 
   async (req, res) => {
     // Validate request body
@@ -24,11 +27,11 @@ exports.login = [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { email, password, businessId } = req.body;
+    const { email, password, businessId, businessName } = req.body;
 
     try {
       // Find user by email
-      const user = await User.findOne({ where: { email } });
+      const user = await User.findOne({ where: { email: email } });
       if (!user) {
         return res.status(401).json({ error: 'Incorrect email or password' });
       }
@@ -36,15 +39,33 @@ exports.login = [
       // Check password
       const isPasswordValid = await bcrypt.compare(password, user.password);
       if (!isPasswordValid) {
-        return res.status(401).json({ error: 'Incorrect email or password' });
+        return res.status(401).json({ error: 'Incorrect email or password here' });
       }
 
       // Verify user's business profile
-      const businessProfile = await BusinessProfile.findOne({
-        where: { id: businessId, userId: user.id },
+      const businessProfile = await Business.findOne({
+        where: { id: businessId, name: businessName },
       });
       if (!businessProfile) {
         return res.status(404).json({ error: 'No matching business profile' });
+      }
+
+      // Check for an existing session
+      const existingSession = await Session.findOne({
+        where: {
+          userId: user.id,
+          businessProfileKey: businessId,
+          expiresAt: { [Op.gt]: new Date() }, // Only find sessions that haven't expired
+        },
+      });
+
+      if (existingSession) {
+        // Use the existing session
+        return res.status(200).json({
+          sessionId: existingSession.sessionId,
+          userId: user.id,
+          expiresAt: existingSession.expiresAt.toISOString(),
+        });
       }
 
       // Create session data

@@ -4,6 +4,7 @@ const { DataTypes } = require('sequelize')
 const Business = require('./business')
 const Referral = require('./referral')
 const User = require('./user')
+const Session = require('./sessionModel')
 
 // FK for business_id on User model
 User.belongsTo(Business, { foreignKey: 'business_id' })
@@ -14,8 +15,16 @@ User.belongsTo(User, { foreignKey: 'referred_by', as: 'referrer' })
 User.hasMany(User, { foreignKey: 'referred_by', as: 'referredUsers' })
 
 // FK for referrer_id on Refferal model
-Referral.belongsTo(User, { foreignKey: 'user_id', as: 'referrer' }) 
+Referral.belongsTo(User, { foreignKey: 'user_id', as: 'referrer' })
 User.hasMany(Referral, { foreignKey: 'referrer_id', as: 'referrals' })
+
+// FK for user_id on Session model
+Session.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+User.hasMany(Session, { foreignKey: 'userId', as: 'sessions' });
+
+// FK for businessProfileKey on Session model
+Session.belongsTo(Business, { foreignKey: 'businessProfileKey', as: 'business' });
+Business.hasMany(Session, { foreignKey: 'businessProfileKey', as: 'sessions' });
 
 // Sync all models with the database
 sequelize.sync({ alter: true }) // change to force: true to drop all data and tables and recreate based on model definitions
@@ -31,5 +40,6 @@ module.exports = {
   sequelize,
   Business,
   Referral,
-  User
+  User,
+  Session,
 }
