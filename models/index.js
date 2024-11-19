@@ -20,11 +20,11 @@ User.hasMany(Referral, { foreignKey: 'referrer_id', as: 'referrals' })
 
 // FK for user_id on Session model
 Session.belongsTo(User, { foreignKey: 'userId', as: 'user' });
-User.hasMany(Session, { foreignKey: 'userId', as: 'sessions' });
+User.hasMany(Session, { foreignKey: 'userId', as: 'Sessions' });
 
 // FK for businessProfileKey on Session model
 Session.belongsTo(Business, { foreignKey: 'businessProfileKey', as: 'business' });
-Business.hasMany(Session, { foreignKey: 'businessProfileKey', as: 'sessions' });
+Business.hasMany(Session, { foreignKey: 'businessProfileKey', as: 'Sessions' });
 
 // Sync all models with the database
 sequelize.sync({ alter: true }) // change to force: true to drop all data and tables and recreate based on model definitions

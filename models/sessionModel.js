@@ -44,7 +44,7 @@ const Session = sequelize.define('Sessions', {
     },
 }, {
     timestamps: false, // Do not add Sequelize's default timestamps
-    tableName: 'sessions', // Ensure table name matches your database
+    tableName: 'Sessions', // Ensure table name matches your database
 });
 
 module.exports = Session;
