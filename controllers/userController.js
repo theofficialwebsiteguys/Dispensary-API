@@ -61,11 +61,13 @@ exports.login = [
 
       if (existingSession) {
         // Use the existing session
-        return res.status(200).json({
-          sessionId: existingSession.sessionId,
-          userId: user.id,
-          expiresAt: existingSession.expiresAt.toISOString(),
-        });
+        return res.status(200)
+          .headers('Authorization', `Bearer ${existingSession.sessionId}`)
+          .json({
+            sessionId: existingSession.sessionId,
+            userId: user.id,
+            expiresAt: existingSession.expiresAt.toISOString(),
+          });
       }
 
       // Create session data
@@ -86,11 +88,13 @@ exports.login = [
       });
 
       // Respond with session details
-      return res.status(200).json({
-        sessionId,
-        userId: user.id,
-        expiresAt: expiresAt.toISOString(),
-      });
+      return res.status(200)
+        .headers('Authorization', `Bearer ${existingSession.sessionId}`)
+        .json({
+          sessionId,
+          userId: user,
+          expiresAt: expiresAt.toISOString(),
+        });
     } catch (error) {
       console.error('Error logging in:', error);
       res.status(500).json({ error: 'Internal server error' });
@@ -99,7 +103,34 @@ exports.login = [
 ];
 
 exports.logout = async (req, res) => {
-  res.json({});
+
+  try {
+
+    const authorizationHeader = req.headers.authorization;
+
+    if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
+      return res.status(400).json({ error: 'Missing or invalid Authorization header' });
+    }
+
+    const sessionId = authorizationHeader.split(' ')[1]; //extract sessionId after 'Bearer '
+
+    //check if the session id is in the database
+    const session = dt.checkUserAuthentication(sessionId);
+
+    if (!session) {
+      res.status(401).json({ error: 'Invalid or expired session' });
+    }
+
+    //Delete session
+    await Session.destroy({
+      where: { sessionId },
+    });
+
+    return res.status(200).json({ message: 'Logout successful' });
+  } catch (error) {
+    console.error('Error logging out: ', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 };
 
 exports.getUser = async (req, res) => {
