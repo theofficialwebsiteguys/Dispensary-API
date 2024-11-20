@@ -1,5 +1,6 @@
 const bcrypt = require('bcryptjs')
 const { Op } = require('sequelize');
+const nodemailer = require('nodemailer')
 
 const Business = require('../models/business')
 const Referral = require('../models/referral')
@@ -102,11 +103,57 @@ async function checkUserAuthentication(sessionId) {
 }
 
 
+async function sendEmail(email) {
+  let { to, subject, text, html } = email;
+  try {
+    const transporter = nodemailer.createTransport({
+      service: 'Gmail', // Or your email service provider
+      auth: {
+        user: process.env.EMAIL_USER, // Your email address
+        pass: process.env.EMAIL_PASS, // Your email password
+      },
+    });
+
+    await transporter.sendMail({
+      from: '"My App Support" <theofficialwebsiteguys@gmail.com>', // Sender address
+      to, // List of recipients
+      subject, // Subject line
+      text, // Plain text body
+      html, // HTML body
+    });
+  } catch (error) {
+    console.error('Error Sending Email:', error)
+    return -1
+  }
+}
+
+async function validateResetToken(token) {
+  if (!token) {
+    throw new Error('Token is required');
+  }
+
+  const user = await User.findOne({
+    where: {
+      reset_token: token,
+      reset_token_expiry: { [Op.gt]: Date.now() }, // Ensure token is not expired
+    },
+  });
+
+  if (!user) {
+    throw new Error('Invalid or expired token');
+  }
+
+  return user; // Return the user if the token is valid
+}
+
+
 module.exports = {
   findReferralByEmail,
   findReferralByPhone,
   hashUserPassword,
   decrementUserPoints,
   incrementUserPoints,
-  checkUserAuthentication
+  checkUserAuthentication,
+  sendEmail,
+  validateResetToken
 }
