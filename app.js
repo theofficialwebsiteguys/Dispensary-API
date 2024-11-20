@@ -1,6 +1,7 @@
 require('dotenv').config()
 
 const express = require('express')
+const cors = require('cors')
 const sequelize = require('./db')
 
 
@@ -9,6 +10,15 @@ const referralRoutes = require('./routes/referralRoutes')
 const userRoutes = require('./routes/userRoutes')
 
 const app = express()
+
+// Enable CORS
+const corsOptions = {
+  origin: 'http://localhost:8100', // Allow requests from Ionic frontend
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  credentials: true,
+};
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // Preflight requests
 
 // Middleware
 app.use(express.json())

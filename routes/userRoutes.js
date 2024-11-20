@@ -16,5 +16,7 @@ router.put('/add-points', userController.addPoints)
 router.put('/redeem-points', userController.redeemPoints)
 router.post('/login', userController.login)
 router.post('/logout', userController.logout)
+router.post('/forgot-password', userController.sendResetPassword)
+router.post('/reset-password', userController.resetPassword)
 
 module.exports = router

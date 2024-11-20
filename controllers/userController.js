@@ -1,6 +1,7 @@
 // controllers/userController.js
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const { v4: uuidv4 } = require('uuid');
 const { validationResult, body } = require('express-validator');
 const { User, Session, Business } = require('../models');
@@ -9,6 +10,7 @@ require('dotenv').config();
 
 const JWT_SECRET = process.env.JWT_SECRET
 const SESSION_EXPIRY_HOURS = 168; // e.g., 7 days
+const PASSWORD_RESET_TOKEN_EXPIRY = 3600; // Token expiry in seconds (1 hour)
 // API ROUTE: ./api/users
 //const User = require('../models/user')
 const dt = require('../toolbox/dispensaryTools')
@@ -62,10 +64,10 @@ exports.login = [
       if (existingSession) {
         // Use the existing session
         return res.status(200)
-          .headers('Authorization', `Bearer ${existingSession.sessionId}`)
+          .set('Authorization', `Bearer ${existingSession.sessionId}`)
           .json({
             sessionId: existingSession.sessionId,
-            userId: user.id,
+            user: user,
             expiresAt: existingSession.expiresAt.toISOString(),
           });
       }
@@ -92,7 +94,7 @@ exports.login = [
         .headers('Authorization', `Bearer ${existingSession.sessionId}`)
         .json({
           sessionId,
-          userId: user,
+          user: user,
           expiresAt: expiresAt.toISOString(),
         });
     } catch (error) {
@@ -291,3 +293,104 @@ exports.redeemPoints = async (req, res) => {
     res.status(500).json({ error: `Error redeeming points: ${error}` })
   }
 }
+
+
+
+
+exports.sendResetPassword = async (req, res) => {
+  try {
+    const { email, business_id } = req.body;
+
+    // Validate email input
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required.' });
+    }
+
+    // Find the user by email
+    const user = await User.findOne({ 
+      where: { 
+        email, 
+        business_id: business_id // Replace with your actual business ID value
+      } 
+    });
+
+    if (!user) {
+      // Respond with success even if the email doesn't exist (avoid enumeration)
+      return res.status(200).json({
+        message: 'If this email is registered, a reset link has been sent.',
+      });
+    }
+
+    // Generate a secure reset token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetTokenExpiry = Date.now() + PASSWORD_RESET_TOKEN_EXPIRY * 1000; // 1-hour expiry
+
+    // Save the reset token and expiry in the database
+    user.reset_token = resetToken;
+    user.reset_token_expiry = resetTokenExpiry;
+    await user.save();
+
+    // Generate the reset link
+    // const resetLink = `myapp://auth?mode=reset-password&token=${resetToken}`;
+
+    const resetLink = `http://localhost:8101/auth?mode=reset-password&token=${resetToken}`;
+
+    // Send the reset link via email
+    await dt.sendEmail({
+      to: email,
+      subject: 'Reset Your Password',
+      text: `You requested a password reset. Click the link to reset your password: ${resetLink}`,
+      html: `<p>You requested a password reset. Click the link below to reset your password:</p>
+             <a href="${resetLink}">${resetLink}</a>`,
+    });
+
+    // Respond with success
+    return res.status(200).json({
+      message: 'If this email is registered, a reset link has been sent.',
+    });
+  } catch (error) {
+    console.error('Error sending reset password link:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+
+exports.resetPassword = async (req, res) => {
+  let { token, password } = req.body;
+
+  try {
+    // Validate required fields
+    if (!token || !password) {
+      return res.status(400).json({ error: 'Token and password are required.' });
+    }
+
+    // Find the user by the reset token and ensure the token is not expired
+    const user =  await dt.validateResetToken(token); // Validate the token
+
+    // Hash the new password
+    const hashedPassword = await dt.hashUserPassword(password);
+
+    // Update the user's password and clear the reset token fields
+    user.password = hashedPassword;
+    user.reset_token = null; // Clear the token
+    user.reset_token_expiry = null; // Clear the expiry
+    await user.save();
+
+    res.status(200).json({ message: 'Password reset successful.' });
+  } catch (error) {
+    console.error('Error resetting password:', error);
+    res.status(500).json({ error: `Internal server error: ${error.message}` });
+  }
+};
+
+
+exports.validateResetToken = async (req, res) => {
+  const { token } = req.params;
+
+  try {
+    await validateResetToken(token); // Validate the token
+    res.status(200).json({ message: 'Token is valid.' });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};

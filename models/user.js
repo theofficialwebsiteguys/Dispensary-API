@@ -45,7 +45,9 @@ const User = sequelize.define('User',
       allowNull: false,
       validate: {
         isValidPhoneNumber(value) {
+          console.log("Value in user.js: " + value);
           const countryCode = this.country || 'US'
+          console.log("CC in user.js: " + countryCode)
           isValidPhoneNumber(value, countryCode)
         }
       },
@@ -86,6 +88,14 @@ const User = sequelize.define('User',
       type: DataTypes.BOOLEAN,
       allowNull: false,
       defaultValue: true
+    },
+    reset_token: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    reset_token_expiry: {
+      type: DataTypes.DATE,
+      allowNull: true,
     }
   },
   {
