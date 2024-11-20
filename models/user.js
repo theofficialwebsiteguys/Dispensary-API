@@ -45,9 +45,7 @@ const User = sequelize.define('User',
       allowNull: false,
       validate: {
         isValidPhoneNumber(value) {
-          console.log("Value in user.js: " + value);
           const countryCode = this.country || 'US'
-          console.log("CC in user.js: " + countryCode)
           isValidPhoneNumber(value, countryCode)
         }
       },
