@@ -105,7 +105,6 @@ exports.login = [
 ];
 
 exports.logout = async (req, res) => {
-
   try {
 
     const authorizationHeader = req.headers.authorization;

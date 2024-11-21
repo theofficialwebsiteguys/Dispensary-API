@@ -5,7 +5,7 @@ const nodemailer = require('nodemailer')
 const Business = require('../models/business')
 const Referral = require('../models/referral')
 const User = require('../models/user')
-const Session = require('../models/sessionModel')
+const Session = require('../models/session')
 
 
 async function findReferralByEmail(email) {
@@ -93,6 +93,7 @@ async function decrementUserPoints(userId, amount) {
   }
 }
 
+
 async function checkUserAuthentication(sessionId) {
   await Session.findOne({
     where: {
@@ -127,6 +128,7 @@ async function sendEmail(email) {
   }
 }
 
+
 async function validateResetToken(token) {
   if (!token) {
     throw new Error('Token is required');
@@ -147,6 +149,30 @@ async function validateResetToken(token) {
 }
 
 
+async function authenticateApiKey(req, res, next) {
+  const key = req.headers["x-auth-api-key"]
+
+  if (!key) {
+    res.status(400).json({message: 'API Key not detected'})
+    return false
+  }
+
+  const business = await Business.findOne({
+    where: {
+      api_key: key
+    }
+  })
+
+  if (!business) {
+    res.status(403).json({message: 'API Key invalid'})
+    return false
+  }
+
+  req.business = business
+  next()
+}
+
+
 module.exports = {
   findReferralByEmail,
   findReferralByPhone,
@@ -155,5 +181,6 @@ module.exports = {
   incrementUserPoints,
   checkUserAuthentication,
   sendEmail,
-  validateResetToken
+  validateResetToken,
+  authenticateApiKey
 }

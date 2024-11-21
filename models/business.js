@@ -16,16 +16,16 @@ const Business = sequelize.define('Business',
         },
         api_key: {
           type: DataTypes.STRING,
-          unique: true,
+          unique: true
         }
     },
     {
         timestamps: true
     }
-);
+)
 
 Business.beforeCreate(async (business) => {
   business.api_key= generateApiKey()
 })
   
-module.exports = Business;
+module.exports = Business

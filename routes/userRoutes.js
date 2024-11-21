@@ -2,12 +2,12 @@
 
 const express = require('express')
 const userController = require('../controllers/userController')
-const authMiddleware = require('../middleware/authMiddleware')
+const { authenticateApiKey } = require('../toolbox/dispensaryTools')
 
 const router = express.Router()
 
-router.get('/', userController.getAllUsers)
-router.get('/id/:id', userController.getUserById)
+router.get('/', authenticateApiKey, userController.getAllUsers)
+router.get('/id/:id', authenticateApiKey, userController.getUserById)
 router.get('/email', userController.getUserByEmail)
 router.get('/phone', userController.getUserByPhone)
 router.post('/register', userController.registerUser)
