@@ -4,7 +4,7 @@ const { DataTypes } = require('sequelize')
 const Business = require('./business')
 const Referral = require('./referral')
 const User = require('./user')
-const Session = require('./sessionModel')
+const Session = require('./session')
 
 // FK for business_id on User model
 User.belongsTo(Business, { foreignKey: 'business_id' })
