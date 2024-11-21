@@ -399,7 +399,24 @@ exports.validateResetToken = async (req, res) => {
 
 
 exports.toggleNotifications = async (req, res) => {
+
+
   const { userId } = req.body; // Extract userId from the request body
+
+  const authorizationHeader = req.headers.authorization;
+
+  if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
+    return res.status(400).json({ error: 'Missing or invalid Authorization header' });
+  }
+
+  const sessionId = authorizationHeader.split(' ')[1]; //extract sessionId after 'Bearer '
+
+  //check if the session id is in the database
+  const session = dt.checkUserAuthentication(sessionId);
+
+  if (!session) {
+    res.status(401).json({ error: 'Invalid or expired session' });
+  }
 
   try {
     // Find the user by their ID
