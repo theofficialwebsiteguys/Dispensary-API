@@ -2,7 +2,7 @@
 const sequelize = require('../db')
 const { DataTypes } = require('sequelize')
 const Business = require('./business')
-const { isValidPhoneNumber, formatPhoneNumber } = require('../validators/phoneNumber')
+const { isValidPhoneNumber, formatPhoneNumber } = require('./validators/phoneNumber')
 
 
 const User = sequelize.define('User', 
