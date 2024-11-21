@@ -91,7 +91,7 @@ exports.login = [
 
       // Respond with session details
       return res.status(200)
-        .headers('Authorization', `Bearer ${existingSession.sessionId}`)
+        .set('Authorization', `Bearer ${sessionId}`)
         .json({
           sessionId,
           user: user,
@@ -148,6 +148,7 @@ exports.add = async (req, res) => {
 exports.redeem = async (req, res) => {
   res.json({});
 };
+
 exports.getAllUsers = async (req, res) => {
   try {
     const users = await User.findAll()
@@ -391,6 +392,38 @@ exports.validateResetToken = async (req, res) => {
     await validateResetToken(token); // Validate the token
     res.status(200).json({ message: 'Token is valid.' });
   } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+
+
+exports.toggleNotifications = async (req, res) => {
+  const { userId } = req.body; // Extract userId from the request body
+
+  try {
+    // Find the user by their ID
+    const user = await User.findByPk(userId);
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Toggle the notifications field
+    const newNotificationSetting = !user.allow_notifications;
+
+    // Update the user's notification setting in the database
+    user.allow_notifications = newNotificationSetting;
+    await user.save();
+
+    // Respond with success and the updated notification setting
+    res.status(200).json({
+      message: 'Notification settings updated successfully.',
+      user: user,
+      notificationsEnabled: newNotificationSetting,
+    });
+  } catch (error) {
+    // Handle any errors
     res.status(400).json({ error: error.message });
   }
 };
