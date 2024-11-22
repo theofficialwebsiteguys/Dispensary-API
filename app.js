@@ -4,6 +4,9 @@ const express = require('express')
 const cors = require('cors')
 const sequelize = require('./db')
 
+const logger = require('./middleware/logger')
+const errorHandler = require('./middleware/errorHandler')
+
 
 const businessRoutes = require('./routes/businessRoutes')
 const referralRoutes = require('./routes/referralRoutes')
@@ -22,12 +25,15 @@ app.options('*', cors(corsOptions)); // Preflight requests
 
 // Middleware
 app.use(express.json())
+app.use(logger)
 
 // Routes - mounting /api/users to all userRoutes in userRoutes.js
 app.use('/api/businesses', businessRoutes)
 app.use('/api/referrals', referralRoutes)
 app.use('/api/users', userRoutes)
 
+// error handling must go after route definitions
+app.use(errorHandler)
 
 sequelize.authenticate()
   .then(() => {

@@ -91,7 +91,7 @@ exports.login = [
 
       // Respond with session details
       return res.status(200)
-        .set('Authorization', `Bearer ${sessionId}`)
+        .headers('Authorization', `Bearer ${existingSession.sessionId}`)
         .json({
           sessionId,
           user: user,
@@ -148,6 +148,7 @@ exports.redeem = async (req, res) => {
   res.json({});
 };
 
+
 exports.getAllUsers = async (req, res) => {
   try {
     const users = await User.findAll()
@@ -189,6 +190,7 @@ exports.getUserByEmail = async (req, res) => {
     res.status(500).json({ error: `Error fetching user: ${error}` })
   }
 }
+
 
 exports.getUserByPhone = async (req, res) => {
   const { phone } = req.body
@@ -233,7 +235,7 @@ exports.registerUser = async (req, res) => {
       })
 
     const newUser = await User.create({ fname, lname, email, dob, country, phone, password: pw, points, business_id, referred_by })
-
+    
     // handle the flow for updates if there is a referral
     if (referral_obj) {
       await dt.incrementUserPoints(newUser.dataValues.id, 200)
@@ -246,7 +248,7 @@ exports.registerUser = async (req, res) => {
 
     res.status(201).json(newUser)
   } catch (error) {
-    res.status(500).json({ error: `${error}` })
+      res.status(500).json({ error: `${error}` })
   }
 }
 
@@ -391,55 +393,6 @@ exports.validateResetToken = async (req, res) => {
     await validateResetToken(token); // Validate the token
     res.status(200).json({ message: 'Token is valid.' });
   } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-};
-
-
-
-exports.toggleNotifications = async (req, res) => {
-
-
-  const { userId } = req.body; // Extract userId from the request body
-
-  const authorizationHeader = req.headers.authorization;
-
-  if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
-    return res.status(400).json({ error: 'Missing or invalid Authorization header' });
-  }
-
-  const sessionId = authorizationHeader.split(' ')[1]; //extract sessionId after 'Bearer '
-
-  //check if the session id is in the database
-  const session = dt.checkUserAuthentication(sessionId);
-
-  if (!session) {
-    res.status(401).json({ error: 'Invalid or expired session' });
-  }
-
-  try {
-    // Find the user by their ID
-    const user = await User.findByPk(userId);
-
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    // Toggle the notifications field
-    const newNotificationSetting = !user.allow_notifications;
-
-    // Update the user's notification setting in the database
-    user.allow_notifications = newNotificationSetting;
-    await user.save();
-
-    // Respond with success and the updated notification setting
-    res.status(200).json({
-      message: 'Notification settings updated successfully.',
-      user: user,
-      notificationsEnabled: newNotificationSetting,
-    });
-  } catch (error) {
-    // Handle any errors
     res.status(400).json({ error: error.message });
   }
 };

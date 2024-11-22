@@ -7,6 +7,8 @@ const Referral = require('../models/referral')
 const User = require('../models/user')
 const Session = require('../models/session')
 
+const AppError = require('./appErrorClass')
+
 
 async function findReferralByEmail(email) {
   try {
@@ -152,24 +154,27 @@ async function validateResetToken(token) {
 async function authenticateApiKey(req, res, next) {
   const key = req.headers["x-auth-api-key"]
 
-  if (!key) {
-    res.status(400).json({message: 'API Key not detected'})
-    return false
-  }
-
-  const business = await Business.findOne({
-    where: {
-      api_key: key
+  try {
+    if (!key) {
+      throw new AppError('Unauthenticated request', 400, { field: 'x-auth-api-key', issue: 'Unable to detect API Key for authentication' })
     }
-  })
 
-  if (!business) {
-    res.status(403).json({message: 'API Key invalid'})
-    return false
+    const business = await Business.findOne({
+      where: {
+        api_key: key
+      }
+    })
+
+    if (!business) {
+      throw new AppError('Unauthenticated request', 400, { field: 'x-auth-api-key', issue: 'Invalid API Key provided for authentication' })
+    }
+
+    req.business = business
+    next()
+
+  } catch (error) {
+    next(error)
   }
-
-  req.business = business
-  next()
 }
 
 
