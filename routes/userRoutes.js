@@ -18,6 +18,6 @@ router.post('/login', userController.login)
 router.post('/logout', userController.logout)
 router.post('/forgot-password', userController.sendResetPassword)
 router.post('/reset-password', userController.resetPassword)
-router.put('/toggle-notifications', userController.toggleNotifications)
+//router.put('/toggle-notifications', userController.toggleNotifications)
 
 module.exports = router
