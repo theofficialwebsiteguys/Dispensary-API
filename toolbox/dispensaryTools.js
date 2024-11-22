@@ -94,16 +94,6 @@ async function decrementUserPoints(userId, amount) {
 }
 
 
-async function checkUserAuthentication(sessionId) {
-  await Session.findOne({
-    where: {
-      sessionId,
-      expiresAt: { [Op.gt]: new Date() },
-    },
-  });
-}
-
-
 async function sendEmail(email) {
   let { to, subject, text, html } = email;
   try {
@@ -129,48 +119,48 @@ async function sendEmail(email) {
 }
 
 
-async function validateResetToken(token) {
-  if (!token) {
-    throw new Error('Token is required');
-  }
+// async function validateResetToken(token) {
+//   if (!token) {
+//     throw new Error('Token is required');
+//   }
 
-  const user = await User.findOne({
-    where: {
-      reset_token: token,
-      reset_token_expiry: { [Op.gt]: Date.now() }, // Ensure token is not expired
-    },
-  });
+//   const user = await User.findOne({
+//     where: {
+//       reset_token: token,
+//       reset_token_expiry: { [Op.gt]: Date.now() }, // Ensure token is not expired
+//     },
+//   });
 
-  if (!user) {
-    throw new Error('Invalid or expired token');
-  }
+//   if (!user) {
+//     throw new Error('Invalid or expired token');
+//   }
 
-  return user; // Return the user if the token is valid
-}
+//   return user; // Return the user if the token is valid
+// }
 
 
-async function authenticateApiKey(req, res, next) {
-  const key = req.headers["x-auth-api-key"]
+// async function authenticateApiKey(req, res, next) {
+//   const key = req.headers["x-auth-api-key"]
 
-  if (!key) {
-    res.status(400).json({message: 'API Key not detected'})
-    return false
-  }
+//   if (!key) {
+//     res.status(400).json({message: 'API Key not detected'})
+//     return false
+//   }
 
-  const business = await Business.findOne({
-    where: {
-      api_key: key
-    }
-  })
+//   const business = await Business.findOne({
+//     where: {
+//       api_key: key
+//     }
+//   })
 
-  if (!business) {
-    res.status(403).json({message: 'API Key invalid'})
-    return false
-  }
+//   if (!business) {
+//     res.status(403).json({message: 'API Key invalid'})
+//     return false
+//   }
 
-  req.business = business
-  next()
-}
+//   req.business = business
+//   next()
+// }
 
 
 module.exports = {
@@ -181,6 +171,6 @@ module.exports = {
   incrementUserPoints,
   checkUserAuthentication,
   sendEmail,
-  validateResetToken,
-  authenticateApiKey
+  // validateResetToken,
+  // authenticateApiKey
 }

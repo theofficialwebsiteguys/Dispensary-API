@@ -356,16 +356,15 @@ exports.sendResetPassword = async (req, res) => {
 
 
 exports.resetPassword = async (req, res) => {
-  let { token, password } = req.body;
+  let { password } = req.body;
 
   try {
     // Validate required fields
-    if (!token || !password) {
-      return res.status(400).json({ error: 'Token and password are required.' });
+    if (!password) {
+      return res.status(400).json({ error: 'New Password is required.' });
     }
 
-    // Find the user by the reset token and ensure the token is not expired
-    const user =  await dt.validateResetToken(token); // Validate the token
+    const user = req.user;
 
     // Hash the new password
     const hashedPassword = await dt.hashUserPassword(password);
