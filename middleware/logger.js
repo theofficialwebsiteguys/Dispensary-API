@@ -1,7 +1,7 @@
 const logger = (req, res, next) => {
     const timestamp = new Date().toISOString()
-    console.log(`[${timestamp}] ${req.method} ${req.url}`)
-    next() // Pass control to the next middleware or route handler
+    console.log(`\x1b[36m%s\x1b[0m`,`[${timestamp}] ${req.method} ${req.url}`)  // ansi escape character to change color of the logger
+    next()
   }
   
 module.exports = logger
