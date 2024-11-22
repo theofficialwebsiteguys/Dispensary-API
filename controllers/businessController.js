@@ -5,39 +5,49 @@ const Business = require('../models/business')
 const sequelize = require('../db')
 
 
-exports.getAllBusinesses = async (req, res) => {
+exports.getAllBusinesses = async (req, res, next) => {
   try {
     const businesses = await Business.findAll();
+
+    if(!businesses){
+      throw new AppError('Not Found', 404, { field: 'businesses', issue: 'Error fetching businesses' });
+    }
+
     res.json(businesses);
   } catch (error) {
-    res.status(500).json({ error: `Error fetching businesses: ${error}` });
+    next(error)
   }
 };
 
 
-exports.getBusinessById = async (req, res) => {
+exports.getBusinessById = async (req, res, next) => {
   try {
     const business = await Business.findByPk(req.params.id);
-    if (business) {
-      res.json(business);
-    } else {
-      res.status(404).json({ error: 'Business not found' });
+
+    if(!business){
+      throw new AppError('Not Found', 404, { field: 'business', issue: 'Business Not Found' });
     }
+
+    res.json(business);
   } catch (error) {
-    res.status(500).json({ error: `Error fetching business: ${error}` });
+    next(error)
   }
 };
 
 
-exports.registerBusiness = async (req, res) => {
+exports.registerBusiness = async (req, res, next) => {
   try {
     console.log(req.body)
     let { name } = req.body;
 
     const newBusiness = await Business.create({ name });
 
+    if(!newBusiness){
+      throw new AppError('Server Error', 500, { field: 'newBusiness', issue: 'Error creating Business' });
+    }
+
     res.status(201).json(newBusiness);
   } catch (error) {
-    res.status(500).json({ error: `${error}` });
+    next(error)
   }
 };

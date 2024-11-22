@@ -2,9 +2,11 @@
 
 const express = require('express');
 const businessController = require('../controllers/businessController')
-const authMiddleware = require('../middleware/authMiddleware')
+const { authenticateRequest } = require('../middleware/authMiddleware');
 
 const router = express.Router()
+
+router.use(authenticateRequest);
 
 router.get('/', businessController.getAllBusinesses)
 router.get('/id/:id', businessController.getBusinessById)
