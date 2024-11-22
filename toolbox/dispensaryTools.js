@@ -7,6 +7,8 @@ const Referral = require('../models/referral')
 const User = require('../models/user')
 const Session = require('../models/session')
 
+const AppError = require('./appErrorClass')
+
 
 async function findReferralByEmail(email) {
   try {
@@ -62,13 +64,13 @@ async function hashUserPassword(pw) {
 }
 
 
-async function incrementUserPoints(userId, amount) {
+async function incrementUserPoints(userId, amount, business_id) {
   try {
     let amountNumber = Number(amount)
     let points = Math.floor(amountNumber)
     await User.increment(
       { points: points },
-      { where: { id: userId } }
+      { where: { id: userId, business_id } }
     )
     return points
   } catch (error) {
@@ -78,13 +80,13 @@ async function incrementUserPoints(userId, amount) {
 }
 
 
-async function decrementUserPoints(userId, amount) {
+async function decrementUserPoints(userId, amount, business_id) {
   try {
     let amountNumber = Number(amount)
     let points = Math.floor(amountNumber)
     await User.decrement(
       { points: points }, // Field and amount to increment
-      { where: { id: userId } }
+      { where: { id: userId, business_id } }
     )
     return points
   } catch (error) {
@@ -119,49 +121,6 @@ async function sendEmail(email) {
 }
 
 
-// async function validateResetToken(token) {
-//   if (!token) {
-//     throw new Error('Token is required');
-//   }
-
-//   const user = await User.findOne({
-//     where: {
-//       reset_token: token,
-//       reset_token_expiry: { [Op.gt]: Date.now() }, // Ensure token is not expired
-//     },
-//   });
-
-//   if (!user) {
-//     throw new Error('Invalid or expired token');
-//   }
-
-//   return user; // Return the user if the token is valid
-// }
-
-
-// async function authenticateApiKey(req, res, next) {
-//   const key = req.headers["x-auth-api-key"]
-
-//   if (!key) {
-//     res.status(400).json({message: 'API Key not detected'})
-//     return false
-//   }
-
-//   const business = await Business.findOne({
-//     where: {
-//       api_key: key
-//     }
-//   })
-
-//   if (!business) {
-//     res.status(403).json({message: 'API Key invalid'})
-//     return false
-//   }
-
-//   req.business = business
-//   next()
-// }
-
 
 module.exports = {
   findReferralByEmail,
@@ -169,8 +128,34 @@ module.exports = {
   hashUserPassword,
   decrementUserPoints,
   incrementUserPoints,
-  checkUserAuthentication,
   sendEmail,
-  // validateResetToken,
-  // authenticateApiKey
 }
+
+
+
+
+// async function authenticateApiKey(req, res, next) {
+//   const key = req.headers["x-auth-api-key"]
+
+//   try {
+//     if (!key) {
+//       throw new AppError('Unauthenticated request', 400, { field: 'x-auth-api-key', issue: 'Unable to detect API Key for authentication' })
+//     }
+
+//     const business = await Business.findOne({
+//       where: {
+//         api_key: key
+//       }
+//     })
+
+//     if (!business) {
+//       throw new AppError('Unauthenticated request', 400, { field: 'x-auth-api-key', issue: 'Invalid API Key provided for authentication' })
+//     }
+
+//     req.business = business
+//     next()
+
+//   } catch (error) {
+//     next(error)
+//   }
+// }

@@ -2,7 +2,7 @@
 
 const express = require('express')
 const userController = require('../controllers/userController')
-const { authenticateRequest, validateResetToken } = require('../middlewares/authMiddleware');
+const { authenticateRequest, validateResetToken } = require('../middleware/authMiddleware');
 
 const router = express.Router()
 

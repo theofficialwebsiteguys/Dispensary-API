@@ -14,6 +14,7 @@ const PASSWORD_RESET_TOKEN_EXPIRY = 3600; // Token expiry in seconds (1 hour)
 // API ROUTE: ./api/users
 //const User = require('../models/user')
 const dt = require('../toolbox/dispensaryTools')
+const AppError = require('../toolbox/appErrorClass')
 
 
 exports.login = [
@@ -22,11 +23,11 @@ exports.login = [
   body('businessId').notEmpty().withMessage('businessId is required'),
   body('businessName').notEmpty().withMessage('businessName is required'),
 
-  async (req, res) => {
+  async (req, res, next) => {
     // Validate request body
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      throw new AppError('Validation Error', 400, { field: 'errors', issue: 'Validation Errors Occurred' });
     }
 
     const { email, password, businessId, businessName } = req.body;
@@ -35,13 +36,13 @@ exports.login = [
       // Find user by email
       const user = await User.findOne({ where: { email: email } });
       if (!user) {
-        return res.status(401).json({ error: 'Incorrect email or password' });
+        throw new AppError('Unauthenticated request', 400, { field: 'businessProfile', issue: 'Incorrect Email or Password' });
       }
 
       // Check password
       const isPasswordValid = await bcrypt.compare(password, user.password);
       if (!isPasswordValid) {
-        return res.status(401).json({ error: 'Incorrect email or password here' });
+        throw new AppError('Unauthenticated request', 400, { field: 'businessProfile', issue: 'Incorrect Email or Password' });
       }
 
       // Verify user's business profile
@@ -49,7 +50,7 @@ exports.login = [
         where: { id: businessId, name: businessName },
       });
       if (!businessProfile) {
-        return res.status(404).json({ error: 'No matching business profile' });
+        throw new AppError('Not Found', 404, { field: 'businessProfile', issue: 'No Matching Business Profile' });
       }
 
       // Check for an existing session
@@ -98,118 +99,98 @@ exports.login = [
           expiresAt: expiresAt.toISOString(),
         });
     } catch (error) {
-      console.error('Error logging in:', error);
-      res.status(500).json({ error: 'Internal server error' });
+      next(error)
     }
   }
 ];
 
-exports.logout = async (req, res) => {
+exports.logout = async (req, res, next) => {
   try {
-
-    const authorizationHeader = req.headers.authorization;
-
-    if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
-      return res.status(400).json({ error: 'Missing or invalid Authorization header' });
-    }
-
-    const sessionId = authorizationHeader.split(' ')[1]; //extract sessionId after 'Bearer '
-
-    //check if the session id is in the database
-    const session = dt.checkUserAuthentication(sessionId);
-
-    if (!session) {
-      res.status(401).json({ error: 'Invalid or expired session' });
-    }
-
-    //Delete session
     await Session.destroy({
-      where: { sessionId },
+      where: { sessionId: req.session.sessionId },
     });
 
     return res.status(200).json({ message: 'Logout successful' });
   } catch (error) {
-    console.error('Error logging out: ', error);
-    res.status(500).json({ error: 'Internal server error' });
+    next(error)
   }
 };
 
-exports.getUser = async (req, res) => {
-  const user = await User.findById(req.user.userId);
-  res.json({ user });
-};
 
-exports.add = async (req, res) => {
-  res.json({});
-};
-
-
-exports.redeem = async (req, res) => {
-  res.json({});
-};
-
-exports.getAllUsers = async (req, res) => {
+exports.getAllUsers = async (req, res, next) => {
   try {
     const users = await User.findAll()
+    
+    if(!users){
+      throw new AppError('Not Found', 404, { field: 'user', issue: 'Error fetching users' });
+    }
+
+    res.json(user)
     res.json(users)
   } catch (error) {
-    res.status(500).json({ error: `Error fetching users: ${error}` })
+    next(error)
   }
 }
 
 
-exports.getUserById = async (req, res) => {
+exports.getUserById = async (req, res, next) => {
   try {
     const user = await User.findByPk(req.params.id)
-    if (user) {
-      res.json(user)
-    } else {
-      res.status(404).json({ error: 'User not found' })
+
+    if(!user){
+      throw new AppError('Not Found', 404, { field: 'user', issue: 'User not found' });
     }
+
+    res.json(user)
   } catch (error) {
-    res.status(500).json({ error: `Error fetching user: ${error}` })
+    next(error)
   }
 }
 
 
-exports.getUserByEmail = async (req, res) => {
+exports.getUserByEmail = async (req, res, next) => {
   const { email } = req.body
   try {
     const user = await User.findOne({
       where: {
         email: email,
+        business_id: req.business_id
       },
     })
-    if (user) {
-      res.json(user)
-    } else {
-      res.status(404).json({ error: 'User not found' })
+
+    if(!user){
+      throw new AppError('Not Found', 404, { field: 'user', issue: 'User not found' });
     }
+
+    res.json(user)
   } catch (error) {
-    res.status(500).json({ error: `Error fetching user: ${error}` })
+    next(error)
   }
 }
 
-exports.getUserByPhone = async (req, res) => {
+
+exports.getUserByPhone = async (req, res, next) => {
   const { phone } = req.body
   try {
     const user = await User.findOne({
       where: {
         phone: phone,
+        business_id: req.business_id
       },
     })
-    if (user) {
-      res.json(user)
-    } else {
-      res.status(404).json({ error: 'User not found' })
+
+    if(!user){
+      throw new AppError('Not Found', 404, { field: 'user', issue: 'User not found' });
     }
+
+    res.json(user)
   } catch (error) {
-    res.status(500).json({ error: `Error fetching user: ${error}` })
+    next(error)
   }
 }
 
 
-exports.registerUser = async (req, res) => {
+exports.registerUser = async (req, res, next) => {
   try {
     let { fname, lname, email, dob, country, phone, password, points, business_id } = req.body
     let referred_by = null
@@ -233,7 +214,7 @@ exports.registerUser = async (req, res) => {
       })
 
     const newUser = await User.create({ fname, lname, email, dob, country, phone, password: pw, points, business_id, referred_by })
-
+    
     // handle the flow for updates if there is a referral
     if (referral_obj) {
       await dt.incrementUserPoints(newUser.dataValues.id, 200)
@@ -246,71 +227,76 @@ exports.registerUser = async (req, res) => {
 
     res.status(201).json(newUser)
   } catch (error) {
-    res.status(500).json({ error: `${error}` })
+      res.status(500).json({ error: `${error}` })
   }
 }
 
 
-exports.deleteUser = async (req, res) => {
+exports.deleteUser = async (req, res, next) => {
   const userId = req.params.id
 
   try {
     const user = await User.findByPk(userId)
 
     if (!user) {
-      return res.status(404).json({ message: 'User not found' })
+      throw new AppError('Not Found', 404, { field: 'result', issue: 'User Not Found' });
     }
 
     await user.destroy()
     res.status(200).json({ message: `User with ID ${userId} deleted successfully` })
 
   } catch (error) {
-    console.error('Error deleting user:', error)
-    res.status(500).json({ message: 'Error deleting user' })
+    next(error)
   }
 }
 
 
-exports.addPoints = async (req, res) => {
+exports.addPoints = async (req, res, next) => {
   let { userId, amount } = req.body
   try {
-    let result = await dt.incrementUserPoints(userId, amount)
+    let result = await dt.incrementUserPoints(userId, amount, req.business_id)
+
+    if(!result){
+      throw new AppError('Server Error', 500, { field: 'result', issue: 'Error Adding Points' });
+    }
+
     res.status(200).json({ userId: `${userId}`, points_added: `${result}` })
   }
   catch (error) {
-    res.status(500).json({ error: `Error adding points: ${error}` })
+    next(error)
   }
 }
 
 
-exports.redeemPoints = async (req, res) => {
+exports.redeemPoints = async (req, res, next) => {
   let { userId, amount } = req.body
   try {
-    let result = await dt.decrementUserPoints(userId, amount)
+    let result = await dt.decrementUserPoints(userId, amount, req.business_id)
+
+    if(!result){
+      throw new AppError('Server Error', 500, { field: 'result', issue: 'Error Redeeming Points' });
+    }
+   
     res.status(200).json({ userId: `${userId}`, points_redeemed: `${result}` })
   }
   catch (error) {
-    res.status(500).json({ error: `Error redeeming points: ${error}` })
+    next(error)
   }
 }
 
-
-
-
-exports.sendResetPassword = async (req, res) => {
+exports.sendResetPassword = async (req, res, next) => {
   try {
     const { email, business_id } = req.body;
 
-    // Validate email input
     if (!email) {
-      return res.status(400).json({ error: 'Email is required.' });
+      throw new AppError('Invalid Request', 400, { field: 'password', issue: 'Email is required' });
     }
 
     // Find the user by email
     const user = await User.findOne({ 
       where: { 
         email, 
-        business_id: business_id // Replace with your actual business ID value
+        business_id: business_id
       } 
     });
 
@@ -349,19 +335,18 @@ exports.sendResetPassword = async (req, res) => {
       message: 'If this email is registered, a reset link has been sent.',
     });
   } catch (error) {
-    console.error('Error sending reset password link:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    next(error)
   }
 };
 
 
-exports.resetPassword = async (req, res) => {
+exports.resetPassword = async (req, res, next) => {
   let { password } = req.body;
 
   try {
     // Validate required fields
     if (!password) {
-      return res.status(400).json({ error: 'New Password is required.' });
+      throw new AppError('Invalid Request', 400, { field: 'password', issue: 'New Password is required' });
     }
 
     const user = req.user;
@@ -377,51 +362,32 @@ exports.resetPassword = async (req, res) => {
 
     res.status(200).json({ message: 'Password reset successful.' });
   } catch (error) {
-    console.error('Error resetting password:', error);
-    res.status(500).json({ error: `Internal server error: ${error.message}` });
+    next(error)
   }
 };
 
 
-exports.validateResetToken = async (req, res) => {
+exports.validateResetToken = async (req, res, next) => {
   const { token } = req.params;
 
   try {
     await validateResetToken(token); // Validate the token
     res.status(200).json({ message: 'Token is valid.' });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+   next(error)
   }
 };
 
 
-
-exports.toggleNotifications = async (req, res) => {
-
-
+exports.toggleNotifications = async (req, res, next) => {
   const { userId } = req.body; // Extract userId from the request body
-
-  const authorizationHeader = req.headers.authorization;
-
-  if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
-    return res.status(400).json({ error: 'Missing or invalid Authorization header' });
-  }
-
-  const sessionId = authorizationHeader.split(' ')[1]; //extract sessionId after 'Bearer '
-
-  //check if the session id is in the database
-  const session = dt.checkUserAuthentication(sessionId);
-
-  if (!session) {
-    res.status(401).json({ error: 'Invalid or expired session' });
-  }
 
   try {
     // Find the user by their ID
     const user = await User.findByPk(userId);
 
     if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+      throw new AppError('Not Found', 400, { field: 'user', issue: 'User not found.' });
     }
 
     // Toggle the notifications field
@@ -438,7 +404,6 @@ exports.toggleNotifications = async (req, res) => {
       notificationsEnabled: newNotificationSetting,
     });
   } catch (error) {
-    // Handle any errors
-    res.status(400).json({ error: error.message });
+    next(error)
   }
 };

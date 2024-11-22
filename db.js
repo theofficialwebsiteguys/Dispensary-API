@@ -6,6 +6,7 @@ const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, proces
   post: process.env.PORT,
   dialect: 'postgres',
   protocol: 'postgres',
+  logging: false,
   dialectOptions: {
     ssl: {
       require: true,
