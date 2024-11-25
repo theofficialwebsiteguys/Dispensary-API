@@ -3,6 +3,7 @@ const sequelize = require('../db')
 const { DataTypes } = require('sequelize')
 const Business = require('./business')
 const { isValidPhoneNumber, formatPhoneNumber } = require('./validators/phoneNumber')
+const { isValidCountryCode } = require('./validators/countryCode')
 
 
 const User = sequelize.define('User', 
@@ -38,7 +39,13 @@ const User = sequelize.define('User',
     },
     country: {
       type: DataTypes.STRING,
-      defaultValue: 'US'
+      defaultValue: 'US',
+      validate: {
+        is: /^[A-Z]{2}$/,  // basic regex for 2 uppercase letters check
+        isValidCountry(value) {
+          isValidCountryCode(value)
+        },
+      },
     },
     phone: {
       type: DataTypes.STRING,

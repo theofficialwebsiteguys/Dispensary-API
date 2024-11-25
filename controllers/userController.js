@@ -5,7 +5,7 @@ const crypto = require('crypto');
 const { v4: uuidv4 } = require('uuid');
 const { validationResult, body } = require('express-validator');
 const { User, Session, Business } = require('../models');
-const { Op } = require('sequelize');
+const { Op, ValidationError } = require('sequelize');
 require('dotenv').config();
 
 const JWT_SECRET = process.env.JWT_SECRET
@@ -433,8 +433,19 @@ exports.updateUser = async (req, res, next) => {
     if (Object.hasOwn(req.body, 'referred_by')) updateData.referred_by = referred_by
     if (Object.hasOwn(req.body, 'allow_notifications')) updateData.allow_notifications = allow_notifications
 
-    await user.update(updateData)
-
+    try {
+      await user.update(updateData);
+    } catch (err) {
+      if (err instanceof ValidationError) {
+        const validationErrors = err.errors.map((e) => ({
+          field: e.path,
+          message: e.message,
+        }));
+        throw new AppError('Validation Error', 400, validationErrors);
+      }
+      throw err
+    }
+    
     res.status(200).json({
       message: 'user updated successfully',
       user,
