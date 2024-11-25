@@ -1,8 +1,6 @@
 // API ROUTE: ./api/businesses
-const bcrypt = require('bcryptjs')
-const jwt = require('jsonwebtoken')
-const Business = require('../models/business')
-const sequelize = require('../db')
+const Business = require('../models/business');
+const AppError = require('../toolbox/appErrorClass');
 
 
 exports.getAllBusinesses = async (req, res, next) => {
@@ -25,7 +23,7 @@ exports.getBusinessById = async (req, res, next) => {
     const business = await Business.findByPk(req.params.id);
 
     if(!business){
-      throw new AppError('Not Found', 404, { field: 'business', issue: 'Business Not Found' });
+      throw new AppError('Not Found', 404, { field: 'business id', issue: 'Business Not Found' });
     }
 
     res.json(business);
@@ -37,7 +35,6 @@ exports.getBusinessById = async (req, res, next) => {
 
 exports.registerBusiness = async (req, res, next) => {
   try {
-    console.log(req.body)
     let { name } = req.body;
 
     const newBusiness = await Business.create({ name });
@@ -51,3 +48,52 @@ exports.registerBusiness = async (req, res, next) => {
     next(error)
   }
 };
+
+
+exports.deleteBusiness = async (req, res, next) => {
+  const businessId = req.params.id
+
+  try {
+    const business = await Business.findByPk(businessId)
+
+    if (!business) {
+      throw new AppError('Not Found', 404, { field: 'result', issue: 'Business Not Found' });
+    }
+
+    await business.destroy()
+    res.status(200).json({ message: `Business with ID ${businessId} deleted successfully` , business: business})
+
+  } catch (error) {
+    next(error)
+  }
+}
+
+
+exports.updateBusiness = async (req, res, next) => {
+  // destructure all variables from the business model, add new vars as the model's columns grow
+  let {id, name, api_key} = req.body 
+
+  try {
+    const business = await Business.findByPk(id)
+
+    if (!business) {
+      throw new AppError('Not Found', 404, { field: 'business id', issue: 'Business Not Found' });
+    }
+
+    const updateData = {}
+
+    // check for each field if it was provided in req.body
+    if (Object.hasOwn(req.body, 'name')) updateData.name = name
+    if (Object.hasOwn(req.body, 'api_key')) updateData.api_key = api_key
+
+    await business.update(updateData)
+
+    res.status(200).json({
+      message: 'Business updated successfully',
+      business,
+    });
+  }
+  catch (error) {
+    next(error)
+  }
+}

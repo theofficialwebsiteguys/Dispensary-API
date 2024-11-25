@@ -125,7 +125,6 @@ exports.getAllUsers = async (req, res, next) => {
       throw new AppError('Not Found', 404, { field: 'user', issue: 'Error fetching users' });
     }
 
-    res.json(user)
     res.json(users)
   } catch (error) {
     next(error)
@@ -407,3 +406,41 @@ exports.toggleNotifications = async (req, res, next) => {
     next(error)
   }
 };
+
+
+exports.updateUser = async (req, res, next) => {
+  // destructure all variables from the model, add new vars as the model's columns grow
+  // password can not be reset via the UPDATE user, only through the reset password route
+  let { id, fname, lname, email, dob, country, phone, points, business_id, referred_by, allow_notifications } = req.body 
+
+  try {
+    const user = await User.findByPk(id)
+
+    if (!user) {
+      throw new AppError('Not Found', 404, { field: 'user id', issue: 'User Not Found' });
+    }
+
+    const updateData = {}
+
+    // check for each field if it was provided in req.body
+    if (Object.hasOwn(req.body, 'fname')) updateData.fname = fname
+    if (Object.hasOwn(req.body, 'lname')) updateData.lname = lname
+    if (Object.hasOwn(req.body, 'email')) updateData.email = email
+    if (Object.hasOwn(req.body, 'dob')) updateData.dob = dob
+    if (Object.hasOwn(req.body, 'country')) updateData.country = country
+    if (Object.hasOwn(req.body, 'points')) updateData.points = points
+    if (Object.hasOwn(req.body, 'business_id')) updateData.business_id = business_id
+    if (Object.hasOwn(req.body, 'referred_by')) updateData.referred_by = referred_by
+    if (Object.hasOwn(req.body, 'allow_notifications')) updateData.allow_notifications = allow_notifications
+
+    await user.update(updateData)
+
+    res.status(200).json({
+      message: 'user updated successfully',
+      user,
+    });
+  }
+  catch (error) {
+    next(error)
+  }
+}

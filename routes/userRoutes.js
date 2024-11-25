@@ -23,5 +23,6 @@ router.put('/add-points', userController.addPoints)
 router.put('/redeem-points', userController.redeemPoints)
 router.post('/logout', userController.logout)
 router.put('/toggle-notifications', userController.toggleNotifications)
+router.put('/update', userController.updateUser)
 
 module.exports = router
