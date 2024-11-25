@@ -51,3 +51,22 @@ exports.registerBusiness = async (req, res, next) => {
     next(error)
   }
 };
+
+
+exports.deleteBusiness = async (req, res, next) => {
+  const businessId = req.params.id
+
+  try {
+    const business = await Business.findByPk(businessId)
+
+    if (!business) {
+      throw new AppError('Not Found', 404, { field: 'result', issue: 'Business Not Found' });
+    }
+
+    await business.destroy()
+    res.status(200).json({ message: `Business with ID ${businessId} deleted successfully` })
+
+  } catch (error) {
+    next(error)
+  }
+}

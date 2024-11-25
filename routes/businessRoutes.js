@@ -6,10 +6,11 @@ const { authenticateRequest } = require('../middleware/authMiddleware');
 
 const router = express.Router()
 
-router.use(authenticateRequest);
+//router.use(authenticateRequest);
 
 router.get('/', businessController.getAllBusinesses)
 router.get('/id/:id', businessController.getBusinessById)
 router.post('/register', businessController.registerBusiness)
+router.delete('/delete/:id', businessController.deleteBusiness)
 
 module.exports = router;
