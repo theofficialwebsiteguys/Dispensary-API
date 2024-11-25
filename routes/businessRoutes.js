@@ -6,7 +6,7 @@ const { authenticateRequest } = require('../middleware/authMiddleware');
 
 const router = express.Router()
 
-//router.use(authenticateRequest);
+router.use(authenticateRequest);
 
 router.get('/', businessController.getAllBusinesses)
 router.get('/id/:id', businessController.getBusinessById)

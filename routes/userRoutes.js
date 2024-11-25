@@ -12,7 +12,7 @@ router.post('/forgot-password', userController.sendResetPassword)
 
 router.post('/reset-password', validateResetToken, userController.resetPassword)
 
-//router.use(authenticateRequest);
+router.use(authenticateRequest);
 
 router.get('/', userController.getAllUsers)
 router.get('/id/:id', userController.getUserById)
