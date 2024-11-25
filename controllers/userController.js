@@ -428,22 +428,24 @@ exports.updateUser = async (req, res, next) => {
     if (Object.hasOwn(req.body, 'email')) updateData.email = email
     if (Object.hasOwn(req.body, 'dob')) updateData.dob = dob
     if (Object.hasOwn(req.body, 'country')) updateData.country = country
+    if (Object.hasOwn(req.body, 'phone')) updateData.phone = phone
     if (Object.hasOwn(req.body, 'points')) updateData.points = points
     if (Object.hasOwn(req.body, 'business_id')) updateData.business_id = business_id
     if (Object.hasOwn(req.body, 'referred_by')) updateData.referred_by = referred_by
     if (Object.hasOwn(req.body, 'allow_notifications')) updateData.allow_notifications = allow_notifications
 
     try {
-      await user.update(updateData);
-    } catch (err) {
-      if (err instanceof ValidationError) {
-        const validationErrors = err.errors.map((e) => ({
-          field: e.path,
-          message: e.message,
+      await user.update(updateData); // Validations in model will run here
+    } catch (error) {
+      console.log(error)
+      if (error.name === 'SequelizeValidationError') {
+        const validationErrors = error.errors.map((err) => ({
+          field: err.path,
+          message: err.message,
         }));
         throw new AppError('Validation Error', 400, validationErrors);
       }
-      throw err
+      throw error; // Rethrow other errors
     }
     
     res.status(200).json({

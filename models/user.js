@@ -41,7 +41,6 @@ const User = sequelize.define('User',
       type: DataTypes.STRING,
       defaultValue: 'US',
       validate: {
-        is: /^[A-Z]{2}$/,  // basic regex for 2 uppercase letters check
         isValidCountry(value) {
           isValidCountryCode(value)
         },
