@@ -6,7 +6,7 @@ const { isValidPhoneNumber, formatPhoneNumber } = require('./validators/phoneNum
 const { isValidCountryCode } = require('./validators/countryCode')
 
 
-const User = sequelize.define('User', 
+const User = sequelize.define('User',
   {
     id: {
       type: DataTypes.INTEGER,
@@ -92,6 +92,11 @@ const User = sequelize.define('User',
       type: DataTypes.BOOLEAN,
       allowNull: false,
       defaultValue: true
+    },
+    pushToken: {
+      type: DataTypes.STRING,
+      allowNull: true, // Initially null until the frontend updates it
+      comment: 'Device-specific push notification token for the user',
     },
     reset_token: {
       type: DataTypes.STRING,

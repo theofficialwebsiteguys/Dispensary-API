@@ -11,6 +11,7 @@ const errorHandler = require('./middleware/errorHandler')
 const businessRoutes = require('./routes/businessRoutes')
 const referralRoutes = require('./routes/referralRoutes')
 const userRoutes = require('./routes/userRoutes')
+const notificationRoutes = require('./routes/notificationRoutes')
 
 const app = express()
 
@@ -31,6 +32,7 @@ app.use(logger)
 app.use('/api/businesses', businessRoutes)
 app.use('/api/referrals', referralRoutes)
 app.use('/api/users', userRoutes)
+app.use('/api/notifications', notificationRoutes)
 
 // error handling must go after route definitions
 app.use(errorHandler)
