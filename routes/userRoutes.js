@@ -14,6 +14,10 @@ router.post('/reset-password', validateResetToken, userController.resetPassword)
 
 router.use(authenticateRequest);
 
+router.get('/validate-session', (req, res) => {
+    res.status(200).json({ valid: true });
+});
+
 router.get('/', userController.getAllUsers)
 router.get('/id/:id', userController.getUserById)
 router.get('/email', userController.getUserByEmail)
@@ -23,5 +27,6 @@ router.put('/add-points', userController.addPoints)
 router.put('/redeem-points', userController.redeemPoints)
 router.post('/logout', userController.logout)
 router.put('/toggle-notifications', userController.toggleNotifications)
+
 
 module.exports = router
