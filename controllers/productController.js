@@ -11,21 +11,22 @@ exports.getAllProducts = async (req, res) => {
 
     const extractTHCAndDescription = (description) => {
       if (!description) return { thc: null, desc: '' };
-
+    
       // Remove HTML tags for clean text
       const cleanDescription = description.replace(/<\/?[^>]+(>|$)/g, '').trim();
-
-      // Match THC percentage (e.g., "28% THC")
-      const thcMatch = cleanDescription.match(/(\d{1,3}% THC)/i);
+    
+      // Match THC percentage, including decimals (e.g., "92.2% THC")
+      const thcMatch = cleanDescription.match(/(\d{1,3}(\.\d{1,2})?% THC)/i);
       const thc = thcMatch ? thcMatch[0] : null;
-
+    
       // Remove THC from description if it exists
       const adjustedDescription = thc
         ? cleanDescription.replace(thc, '').trim()
         : cleanDescription;
-
+    
       return { thc, desc: adjustedDescription };
     };
+    
 
     const fetchPage = async () => {
       const response = await axios.get(
@@ -52,7 +53,7 @@ exports.getAllProducts = async (req, res) => {
               brand: item.brand?.name || '',
               strainType: item.cannabisStrain || '',
               thc, // Extracted THC percentage or null
-              weight: item.weight || '',
+              weight: item.weightFormatted || '',
               price: item.price || '',
               image: item.image || item.images?.[0] || '',
             };
