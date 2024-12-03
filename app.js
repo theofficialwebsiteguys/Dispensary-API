@@ -39,13 +39,16 @@ app.use(errorHandler)
 
 sequelize.authenticate()
   .then(() => {
-    console.log('Connected to the database.')
-    app.listen(process.env.PORT || 3333, () => {
-      console.log(`Server is running on port ${process.env.PORT}`)
-    })
+    console.log('Connected to the database.');
+    const port = process.env.PORT || 3333; // Use Heroku's PORT or 3333 locally
+    app.listen(port, () => {
+      console.log(`Server is running on port ${port}`);
+    });
   })
   .catch(err => {
-    console.error('Unable to connect to the database:', err)
-  })
+    console.error('Unable to connect to the database:', err);
+    process.exit(1); // Exit process on failure
+  });
+
 
 module.exports = app
