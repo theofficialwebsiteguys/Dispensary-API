@@ -30,7 +30,6 @@ app.options('*', (req, res) => {
   res.status(204).end();
 });
 
-
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions)); // Preflight requests
 
