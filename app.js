@@ -17,7 +17,7 @@ const app = express()
 
 // Enable CORS
 const corsOptions = {
-  origin: 'http://localhost:8100', // Allow requests from Ionic frontend
+  origin: 'http://localhost', // Allow requests from Ionic frontend
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
   credentials: true,
 };
