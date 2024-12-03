@@ -40,8 +40,8 @@ app.use(errorHandler)
 sequelize.authenticate()
   .then(() => {
     console.log('Connected to the database.')
-    app.listen(process.env.API_PORT, () => {
-      console.log(`Server is running on port ${process.env.API_PORT}`)
+    app.listen(process.env.PORT || 3333, () => {
+      console.log(`Server is running on port ${process.env.PORT}`)
     })
   })
   .catch(err => {
