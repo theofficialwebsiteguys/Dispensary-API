@@ -367,15 +367,16 @@ exports.resetPassword = async (req, res, next) => {
 
 
 exports.validateResetToken = async (req, res, next) => {
-  const { token } = req.params;
+  const { token } = req.params; // Get token from route parameters
 
   try {
     await validateResetToken(token); // Validate the token
     res.status(200).json({ message: 'Token is valid.' });
   } catch (error) {
-    next(error)
+    next(error); // Forward error to centralized error handler
   }
 };
+
 
 
 exports.toggleNotifications = async (req, res, next) => {

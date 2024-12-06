@@ -1,5 +1,4 @@
-const { Session } = require('../models'); 
-const { Business } = require('../models'); 
+const { Session, Business, User } = require('../models'); 
 const { Op } = require('sequelize');
 const AppError = require('../toolbox/appErrorClass')
 
@@ -49,11 +48,9 @@ const authenticateRequest = async (req, res, next) => {
 };
 
 
-
-
 const validateResetToken = async (req, res, next) => {
   try {
-    const { token } = req.body; // Assume the token is sent in the request body
+    const { token } = req.query;
 
     if (!token) {
       throw new AppError('Invalid request', 400, { field: 'token', issue: 'Unable to detect reset token for validation.' });
@@ -62,7 +59,7 @@ const validateResetToken = async (req, res, next) => {
     const user = await User.findOne({
       where: {
         reset_token: token,
-        reset_token_expiry: { [Op.gt]: Date.now() }, // Ensure token is not expired
+        reset_token_expiry: { [Op.gt]: Date.now() },
       },
     });
 
@@ -70,14 +67,14 @@ const validateResetToken = async (req, res, next) => {
       throw new AppError('Invalid request', 400, { field: 'token', issue: 'Invalid or Expired Reset Token' });
     }
 
-    // Attach user to the request for use in the controller
     req.user = user;
 
-    next(); // Proceed to the next middleware or controller
+    next();
   } catch (error) {
-    next(error); // Pass the error to the centralized error handler
+    next(error); 
   }
 };
+
 
 
 module.exports = { authenticateRequest, validateResetToken };
