@@ -23,6 +23,9 @@ const corsOptions = {
   credentials: true,
 };
 
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // Preflight requests
+
 app.options('*', (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE');
@@ -31,8 +34,8 @@ app.options('*', (req, res) => {
   res.status(204).end();
 });
 
-app.use(cors(corsOptions));
-app.options('*', cors(corsOptions)); // Preflight requests
+
+
 
 // Middleware
 app.use(express.json())
