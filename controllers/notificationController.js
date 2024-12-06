@@ -1,6 +1,12 @@
 // controllers/userController.js
 const { Notification, User } = require('../models');
 const { body } = require("express-validator");
+const admin = require('firebase-admin');
+//const serviceAccount = require('./service-account-key.json');
+
+//admin.initializeApp({
+//  credential: admin.credential.cert(serviceAccount),
+//});
 
 exports.sendPush = async (req, res) => {
   const { userId, eventType, payload } = req.body;

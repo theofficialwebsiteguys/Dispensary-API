@@ -28,7 +28,8 @@ router.put('/redeem-points', userController.redeemPoints)
 router.post('/logout', userController.logout)
 router.put('/toggle-notifications', userController.toggleNotifications)
 router.put('/update', userController.updateUser)
-router.post('/save-push-token', userController.savePushToken)
+router.post('/update-push-token', userController.updateUserPushToken)
+router.post('/push-token', userController.getUserPushToken)
 
 
 module.exports = router

@@ -379,11 +379,11 @@ exports.validateResetToken = async (req, res, next) => {
 
 
 exports.toggleNotifications = async (req, res, next) => {
-  const { userId } = req.body; // Extract userId from the request body
+  const { email } = req.body; // Extract userId from the request body
 
   try {
     // Find the user by their ID
-    const user = await User.findByPk(userId);
+    const user = await User.findOne({ where: { email } });
 
     if (!user) {
       throw new AppError('Not Found', 400, { field: 'user', issue: 'User not found.' });
@@ -458,26 +458,54 @@ exports.updateUser = async (req, res, next) => {
   }
 }
 
-exports.savePushToken = async (req, res) => {
-  const { userId, pushToken } = req.body;
-
-  if (!userId || !pushToken) {
-    return res.status(400).json({ error: 'User ID and push token are required' });
-  }
-
+exports.getUserPushToken = async (req, res) => {
   try {
-    const user = await User.findByPk(userId);
+
+    const { email } = req.body;
+
+    const user = await User.findOne({ where: { email } }, { attributes: ['pushToken'] });
+
     if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+      throw new Error(`User with email ${email} not found`);
     }
 
-    // Save or update the push token
-    user.pushToken = pushToken;
-    await user.save();
+    if (!user.pushToken) {
+      throw new Error(`Push token not found for user with email ${email}`);
+    }
 
-    res.status(200).json({ message: 'Push token saved successfully' });
+    return user.pushToken;
   } catch (error) {
-    console.error('Error saving push token:', error.message);
-    res.status(500).json({ error: 'Failed to save push token' });
+    console.error('Error retrieving push token:', error.message);
+    throw error;
+  }
+}
+
+exports.updateUserPushToken = async (req, res) => {
+  try {
+    const { email, token } = req.body;
+
+    // Validate request parameters
+    if (!email || !token) {
+      return res.status(400).json({ message: 'Email and token are required.' });
+    }
+
+    // Find user by email
+    const user = await User.findOne({ where: { email } });
+
+    if (!user) {
+      return res.status(404).json({ message: `User with email ${email} not found.` });
+    }
+
+    // Check if the token has changed
+    if (user.pushToken !== token) {
+      user.pushToken = token; // Update the push token
+      await user.save();
+      return res.status(200).json({ message: 'Push token updated successfully.' });
+    }
+
+    return res.status(200).json({ message: 'Push token is already up-to-date.' });
+  } catch (error) {
+    console.error('Error updating push token:', error.message);
+    return res.status(500).json({ message: 'Internal server error.', error: error.message });
   }
 };
