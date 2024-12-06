@@ -11,7 +11,10 @@ router.post('/register', userController.registerUser)
 router.post('/forgot-password', userController.sendResetPassword)
 
 router.post('/reset-password', validateResetToken, userController.resetPassword)
-
+router.get('/validate-reset-token', validateResetToken, (req, res) => {
+    res.status(200).json({ success: true, message: 'Reset token is valid.' });
+});
+  
 router.use(authenticateRequest);
 
 router.get('/validate-session', (req, res) => {

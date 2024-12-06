@@ -47,6 +47,7 @@ exports.getAllProducts = async (req, res) => {
             const { thc, desc } = extractTHCAndDescription(item.description || '');
 
             return {
+              id: item.id,
               category: item.cannabisComplianceType || item.cannabisType || '',
               title: item.name || '',
               desc,
