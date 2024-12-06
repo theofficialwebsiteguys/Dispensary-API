@@ -5,6 +5,7 @@ const Business = require('./business')
 const Referral = require('./referral')
 const User = require('./user')
 const Session = require('./session')
+const Notification = require('./notification')
 
 // FK for business_id on User model
 User.belongsTo(Business, { foreignKey: 'business_id' })
@@ -26,6 +27,10 @@ User.hasMany(Session, { foreignKey: 'userId', as: 'Sessions' });
 Session.belongsTo(Business, { foreignKey: 'businessProfileKey', as: 'business' });
 Business.hasMany(Session, { foreignKey: 'businessProfileKey', as: 'Sessions' });
 
+// FK for userId on Notification model
+Notification.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+User.hasMany(Notification, { foreignKey: 'userId', as: 'notifications' });
+
 // Sync all models with the database
 sequelize.sync({ alter: true }) // change to force: true to drop all data and tables and recreate based on model definitions
   .then(() => {
@@ -42,4 +47,5 @@ module.exports = {
   Referral,
   User,
   Session,
+  Notification,
 }

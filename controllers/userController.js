@@ -120,8 +120,8 @@ exports.logout = async (req, res, next) => {
 exports.getAllUsers = async (req, res, next) => {
   try {
     const users = await User.findAll()
-    
-    if(!users){
+
+    if (!users) {
       throw new AppError('Not Found', 404, { field: 'user', issue: 'Error fetching users' });
     }
 
@@ -136,7 +136,7 @@ exports.getUserById = async (req, res, next) => {
   try {
     const user = await User.findByPk(req.params.id)
 
-    if(!user){
+    if (!user) {
       throw new AppError('Not Found', 404, { field: 'user', issue: 'User not found' });
     }
 
@@ -157,7 +157,7 @@ exports.getUserByEmail = async (req, res, next) => {
       },
     })
 
-    if(!user){
+    if (!user) {
       throw new AppError('Not Found', 404, { field: 'user', issue: 'User not found' });
     }
 
@@ -178,7 +178,7 @@ exports.getUserByPhone = async (req, res, next) => {
       },
     })
 
-    if(!user){
+    if (!user) {
       throw new AppError('Not Found', 404, { field: 'user', issue: 'User not found' });
     }
 
@@ -213,7 +213,7 @@ exports.registerUser = async (req, res, next) => {
       })
 
     const newUser = await User.create({ fname, lname, email, dob, country, phone, password: pw, points, business_id, referred_by })
-    
+
     // handle the flow for updates if there is a referral
     if (referral_obj) {
       await dt.incrementUserPoints(newUser.dataValues.id, 200)
@@ -226,7 +226,7 @@ exports.registerUser = async (req, res, next) => {
 
     res.status(201).json(newUser)
   } catch (error) {
-      res.status(500).json({ error: `${error}` })
+    res.status(500).json({ error: `${error}` })
   }
 }
 
@@ -255,7 +255,7 @@ exports.addPoints = async (req, res, next) => {
   try {
     let result = await dt.incrementUserPoints(userId, amount, req.business_id)
 
-    if(!result){
+    if (!result) {
       throw new AppError('Server Error', 500, { field: 'result', issue: 'Error Adding Points' });
     }
 
@@ -272,10 +272,10 @@ exports.redeemPoints = async (req, res, next) => {
   try {
     let result = await dt.decrementUserPoints(userId, amount, req.business_id)
 
-    if(!result){
+    if (!result) {
       throw new AppError('Server Error', 500, { field: 'result', issue: 'Error Redeeming Points' });
     }
-   
+
     res.status(200).json({ userId: `${userId}`, points_redeemed: `${result}` })
   }
   catch (error) {
@@ -292,11 +292,11 @@ exports.sendResetPassword = async (req, res, next) => {
     }
 
     // Find the user by email
-    const user = await User.findOne({ 
-      where: { 
-        email, 
+    const user = await User.findOne({
+      where: {
+        email,
         business_id: business_id
-      } 
+      }
     });
 
     if (!user) {
@@ -380,11 +380,11 @@ exports.validateResetToken = async (req, res, next) => {
 
 
 exports.toggleNotifications = async (req, res, next) => {
-  const { userId } = req.body; // Extract userId from the request body
+  const { email } = req.body; // Extract userId from the request body
 
   try {
     // Find the user by their ID
-    const user = await User.findByPk(userId);
+    const user = await User.findOne({ where: { email } });
 
     if (!user) {
       throw new AppError('Not Found', 400, { field: 'user', issue: 'User not found.' });
@@ -412,7 +412,7 @@ exports.toggleNotifications = async (req, res, next) => {
 exports.updateUser = async (req, res, next) => {
   // destructure all variables from the model, add new vars as the model's columns grow
   // password can not be reset via the UPDATE user, only through the reset password route
-  let { id, fname, lname, email, dob, country, phone, points, business_id, referred_by, allow_notifications } = req.body 
+  let { id, fname, lname, email, dob, country, phone, points, business_id, referred_by, allow_notifications } = req.body
 
   try {
     const user = await User.findByPk(id)
@@ -448,7 +448,7 @@ exports.updateUser = async (req, res, next) => {
       }
       throw error; // Rethrow other errors
     }
-    
+
     res.status(200).json({
       message: 'user updated successfully',
       user,
@@ -458,3 +458,55 @@ exports.updateUser = async (req, res, next) => {
     next(error)
   }
 }
+
+exports.getUserPushToken = async (req, res) => {
+  try {
+
+    const { email } = req.body;
+
+    const user = await User.findOne({ where: { email } }, { attributes: ['pushToken'] });
+
+    if (!user) {
+      throw new Error(`User with email ${email} not found`);
+    }
+
+    if (!user.pushToken) {
+      throw new Error(`Push token not found for user with email ${email}`);
+    }
+
+    return user.pushToken;
+  } catch (error) {
+    console.error('Error retrieving push token:', error.message);
+    throw error;
+  }
+}
+
+exports.updateUserPushToken = async (req, res) => {
+  try {
+    const { email, token } = req.body;
+
+    // Validate request parameters
+    if (!email || !token) {
+      return res.status(400).json({ message: 'Email and token are required.' });
+    }
+
+    // Find user by email
+    const user = await User.findOne({ where: { email } });
+
+    if (!user) {
+      return res.status(404).json({ message: `User with email ${email} not found.` });
+    }
+
+    // Check if the token has changed
+    if (user.pushToken !== token) {
+      user.pushToken = token; // Update the push token
+      await user.save();
+      return res.status(200).json({ message: 'Push token updated successfully.' });
+    }
+
+    return res.status(200).json({ message: 'Push token is already up-to-date.' });
+  } catch (error) {
+    console.error('Error updating push token:', error.message);
+    return res.status(500).json({ message: 'Internal server error.', error: error.message });
+  }
+};

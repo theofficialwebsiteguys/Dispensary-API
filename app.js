@@ -11,6 +11,7 @@ const errorHandler = require('./middleware/errorHandler')
 const businessRoutes = require('./routes/businessRoutes')
 const referralRoutes = require('./routes/referralRoutes')
 const userRoutes = require('./routes/userRoutes')
+const notificationRoutes = require('./routes/notificationRoutes')
 const productRoutes = require('./routes/productRoutes')
 
 const app = express()
@@ -22,6 +23,9 @@ const corsOptions = {
   credentials: true,
 };
 
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // Preflight requests
+
 app.options('*', (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE');
@@ -30,8 +34,8 @@ app.options('*', (req, res) => {
   res.status(204).end();
 });
 
-app.use(cors(corsOptions));
-app.options('*', cors(corsOptions)); // Preflight requests
+
+
 
 // Middleware
 app.use(express.json())
@@ -41,6 +45,7 @@ app.use(logger)
 app.use('/api/businesses', businessRoutes)
 app.use('/api/referrals', referralRoutes)
 app.use('/api/users', userRoutes)
+app.use('/api/notifications', notificationRoutes)
 app.use('/api/products', productRoutes)
 
 // error handling must go after route definitions
