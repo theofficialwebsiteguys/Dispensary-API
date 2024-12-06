@@ -18,10 +18,19 @@ const app = express()
 
 // Enable CORS
 const corsOptions = {
-  origin: 'http://localhost:8100', // Allow requests from Ionic frontend
+  origin: ['http://localhost:8100', 'https://localhost'], // Allow requests from Ionic frontend
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
   credentials: true,
 };
+
+app.options('*', (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.status(204).end();
+});
+
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions)); // Preflight requests
 
@@ -41,13 +50,16 @@ app.use(errorHandler)
 
 sequelize.authenticate()
   .then(() => {
-    console.log('Connected to the database.')
-    app.listen(process.env.API_PORT, () => {
-      console.log(`Server is running on port ${process.env.API_PORT}`)
-    })
+    console.log('Connected to the database.');
+    const port = process.env.PORT || 3333; // Use Heroku's PORT or 3333 locally
+    app.listen(port, () => {
+      console.log(`Server is running on port ${port}`);
+    });
   })
   .catch(err => {
-    console.error('Unable to connect to the database:', err)
-  })
+    console.error('Unable to connect to the database:', err);
+    process.exit(1); // Exit process on failure
+  });
+
 
 module.exports = app
