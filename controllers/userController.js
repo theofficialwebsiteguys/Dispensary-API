@@ -319,7 +319,7 @@ exports.sendResetPassword = async (req, res, next) => {
     // const resetLink = `myapp://auth?mode=reset-password&token=${resetToken}`;
 
     //const resetLink = `http://localhost:8101/auth?mode=reset-password&token=${resetToken}`;
-    const resetLink = `https://dispensary-api-ac9613fa4c11.herokuapp.com/reset-password?token=${resetToken}`;
+    const resetLink = `https://dispensary-api-ac9613fa4c11.herokuapp.com/redirect?token=${resetToken}`;
 
     // Send the reset link via email
     await dt.sendEmail({
