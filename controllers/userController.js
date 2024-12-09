@@ -347,6 +347,14 @@ exports.sendResetPassword = async (req, res, next) => {
 };
 
 
+exports.handleResetPasswordRedirect = async (req, res) => {
+  const { token } = req.query;
+
+  const deepLink = `flowerPower://auth?mode=reset-password&token=${token}`;
+  return res.redirect(deepLink);
+};
+
+
 exports.resetPassword = async (req, res, next) => {
   let { password } = req.body;
 
