@@ -326,9 +326,16 @@ exports.sendResetPassword = async (req, res, next) => {
       to: email,
       subject: 'Reset Your Password',
       text: `You requested a password reset. Click the link to reset your password: ${resetLink}`,
-      html: `<p>You requested a password reset. Click the link below to reset your password:</p>
-             <a href="${resetLink}">${resetLink}</a>`,
+      html: `
+        <p>You requested a password reset. Click the link below to reset your password:</p>
+        <a href="${resetLink}" style="color: blue; text-decoration: underline;">
+          Reset Your Password
+        </a>
+        <p>If the above link does not work, copy and paste the following into your browser:</p>
+        <p>${resetLink}</p>
+      `,
     });
+    
 
     // Respond with success
     return res.status(200).json({
