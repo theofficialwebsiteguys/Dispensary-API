@@ -318,7 +318,8 @@ exports.sendResetPassword = async (req, res, next) => {
     // Generate the reset link
     // const resetLink = `myapp://auth?mode=reset-password&token=${resetToken}`;
 
-    const resetLink = `http://localhost:8101/auth?mode=reset-password&token=${resetToken}`;
+    //const resetLink = `http://localhost:8101/auth?mode=reset-password&token=${resetToken}`;
+    const resetLink = `flowerPower://auth?mode=reset-password&token=${resetToken}`;
 
     // Send the reset link via email
     await dt.sendEmail({
