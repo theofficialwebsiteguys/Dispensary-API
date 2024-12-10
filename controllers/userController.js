@@ -14,7 +14,8 @@ const PASSWORD_RESET_TOKEN_EXPIRY = 3600; // Token expiry in seconds (1 hour)
 // API ROUTE: ./api/users
 //const User = require('../models/user')
 const dt = require('../toolbox/dispensaryTools')
-const AppError = require('../toolbox/appErrorClass')
+const AppError = require('../toolbox/appErrorClass');
+const { now } = require('sequelize/lib/utils');
 
 
 exports.login = [
@@ -283,6 +284,7 @@ exports.redeemPoints = async (req, res, next) => {
   }
 }
 
+
 exports.sendResetPassword = async (req, res, next) => {
   try {
     const { email, business_id } = req.body;
@@ -428,7 +430,7 @@ exports.toggleNotifications = async (req, res, next) => {
 exports.updateUser = async (req, res, next) => {
   // destructure all variables from the model, add new vars as the model's columns grow
   // password can not be reset via the UPDATE user, only through the reset password route
-  let { id, fname, lname, email, dob, country, phone, points, business_id, referred_by, allow_notifications } = req.body
+  let { id, fname, lname, email, dob, country, phone, points, business_id, referred_by, allow_notifications, premium, premium_start, premium_end } = req.body
 
   try {
     const user = await User.findByPk(id)
@@ -450,6 +452,9 @@ exports.updateUser = async (req, res, next) => {
     if (Object.hasOwn(req.body, 'business_id')) updateData.business_id = business_id
     if (Object.hasOwn(req.body, 'referred_by')) updateData.referred_by = referred_by
     if (Object.hasOwn(req.body, 'allow_notifications')) updateData.allow_notifications = allow_notifications
+    if (Object.hasOwn(req.body, 'premium')) updateData.premium = premium
+    if (Object.hasOwn(req.body, 'premium_start')) updateData.premium_start = premium_start
+    if (Object.hasOwn(req.body, 'premium_end')) updateData.premium_end = premium_end
 
     try {
       await user.update(updateData); // Validations in model will run here
@@ -475,6 +480,7 @@ exports.updateUser = async (req, res, next) => {
   }
 }
 
+
 exports.getUserPushToken = async (req, res) => {
   try {
 
@@ -496,6 +502,7 @@ exports.getUserPushToken = async (req, res) => {
     throw error;
   }
 }
+
 
 exports.updateUserPushToken = async (req, res) => {
   try {
@@ -526,3 +533,71 @@ exports.updateUserPushToken = async (req, res) => {
     return res.status(500).json({ message: 'Internal server error.', error: error.message });
   }
 };
+
+
+exports.upgradeUserMembership = async(req, res, next) => {
+  let { phone, email } = req.body
+
+  phone == undefined ? phone = '' : phone
+  email == undefined ? email = '' : email
+
+  try {
+    const user = await User.findOne({
+      where: {
+        business_id: req.business_id,
+        [Op.or]: [
+          { phone: phone },
+          { email: email }
+        ]
+      },
+    })
+
+    if (!user) {
+      throw new AppError('Not Found', 404, { field: 'email or phone', issue: 'User Not Found' });
+    }
+
+    user.premium = true
+    user.premium_start = new Date()
+    user.premium_end.setFullYear(user.premium_start.getFullYear() + 1)
+
+    await user.save()
+
+    res.status(200).json({message: 'User membership upgraded'})
+
+  } catch(error) {
+    next(error)
+  }
+}
+
+
+exports.downgradeUserMembership = async(req, res) => {
+  let { phone, email } = req.body
+
+  phone == undefined ? phone = '' : phone
+  email == undefined ? email = '' : email
+
+  try {
+    const user = await User.findOne({
+      where: {
+        business_id: req.business_id,
+        [Op.or]: [
+          { phone: phone },
+          { email: email }
+        ]
+      },
+    })
+
+    if (!user) {
+      throw new AppError('Not Found', 404, { field: 'email or phone', issue: 'User Not Found' });
+    }
+
+    user.premium = false
+    await user.save()
+
+    res.status(200).json({message: 'User membership downgraded'})
+
+  } catch(error) {
+    next(error)
+  }
+}
+
