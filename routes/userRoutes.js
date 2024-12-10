@@ -6,8 +6,6 @@ const { authenticateRequest, validateResetToken } = require('../middleware/authM
 
 const router = express.Router()
 
-
-
 router.post('/login', userController.login)
 router.post('/register', userController.registerUser)
 router.post('/forgot-password', userController.sendResetPassword)
@@ -36,7 +34,8 @@ router.put('/toggle-notifications', userController.toggleNotifications)
 router.put('/update', userController.updateUser)
 router.post('/update-push-token', userController.updateUserPushToken)
 router.post('/push-token', userController.getUserPushToken)
-
+router.put('/user-membership/upgrade', userController.upgradeUserMembership)
+router.put('/user-membership/downgrade', userController.downgradeUserMembership)
 
 
 module.exports = router

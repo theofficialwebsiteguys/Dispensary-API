@@ -105,6 +105,19 @@ const User = sequelize.define('User',
     reset_token_expiry: {
       type: DataTypes.DATE,
       allowNull: true,
+    },
+    premium: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false
+    },
+    premium_start: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+    premium_end: {
+      type: DataTypes.DATE,
+      allowNull: true
     }
   },
   {
