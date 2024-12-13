@@ -2,6 +2,7 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const axios = require('axios');
 const { v4: uuidv4 } = require('uuid');
 const { validationResult, body } = require('express-validator');
 const { User, Session, Business } = require('../models');
@@ -224,6 +225,22 @@ exports.registerUser = async (req, res, next) => {
         { where: { id: referral_obj.dataValues.id } }
       )
     }
+    
+    // Fire and forget external API call
+    axios.post('https://api.dispenseapp.com/2023-03/auth/register', {
+      email,
+      password
+    }, {
+      headers: {
+        'x-dispense-api-key': process.env.FLOWER_POWER_API_KEY,
+      },
+    }).then(response => {
+      newUser.alpineToken = response.data.token; // Update the push token
+      newUser.save();
+      console.log('External API Response:', response.data);
+    }).catch(apiError => {
+      console.error('Error calling external API:', apiError.response ? apiError.response.data : apiError.message);
+    });
 
     res.status(201).json(newUser)
   } catch (error) {
@@ -398,11 +415,11 @@ exports.validateResetToken = async (req, res, next) => {
 
 
 exports.toggleNotifications = async (req, res, next) => {
-  const { email } = req.body; // Extract userId from the request body
+  const { userId } = req.body; // Extract userId from the request body
 
   try {
     // Find the user by their ID
-    const user = await User.findOne({ where: { email } });
+    const user = await User.findOne({ where: { id: userId } });
 
     if (!user) {
       throw new AppError('Not Found', 400, { field: 'user', issue: 'User not found.' });

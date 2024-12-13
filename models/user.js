@@ -118,6 +118,10 @@ const User = sequelize.define('User',
     premium_end: {
       type: DataTypes.DATE,
       allowNull: true
+    },
+    alpineToken: {
+      type: DataTypes.STRING,
+      allowNull: true
     }
   },
   {
