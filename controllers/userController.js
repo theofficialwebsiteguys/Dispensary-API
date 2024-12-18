@@ -26,14 +26,15 @@ exports.login = [
 
   async (req, res, next) => {
     // Validate request body
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      throw new AppError('Validation Error', 400, { field: 'errors', issue: 'Validation Errors Occurred' });
-    }
-
     const { email, password, businessId, businessName } = req.body;
 
     try {
+        const errors = validationResult(req);
+
+        if (!errors.isEmpty()) {
+          throw new AppError('Validation Error', 400, { field: 'errors', issue: 'Validation Errors Occurred' });
+        }
+
       // Find user by email
       const user = await User.findOne({ where: { email: email } });
       if (!user) {
