@@ -1,4 +1,4 @@
-// routes/userRoutes.js
+// routes/notificationRoutes.js
 const express = require('express');
 const notificationController = require('../controllers/notificationController');
 
