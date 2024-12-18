@@ -17,14 +17,20 @@ const productRoutes = require('./routes/productRoutes')
 const app = express()
 
 // Enable CORS
-const corsOptions = {
-  origin: ['http://localhost:8100', 'https://localhost'], // Allow requests from Ionic frontend
-  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-  credentials: true,
-};
+// const corsOptions = {
+//   origin: ['http://localhost:8100', 'https://localhost'], // Allow requests from Ionic frontend
+//   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+//   credentials: true,
+// };
 
-app.use(cors(corsOptions));
-app.options('*', cors(corsOptions)); // Preflight requests
+// app.use(cors(corsOptions));
+app.use(cors({
+  origin: '*', // For development; specify allowed origins for production.
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  preflightContinue: true
+}));
+app.options('*', cors()); // Preflight requests
 
 app.options('*', (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
