@@ -9,6 +9,8 @@ exports.getAllProducts = async (req, res) => {
     let total = 0;
     const products = [];
 
+    const venueId = req.query.venueId;
+
     const extractTHCAndDescription = (description) => {
       if (!description) return { thc: null, desc: '' };
     
@@ -30,8 +32,13 @@ exports.getAllProducts = async (req, res) => {
 
     const fetchPage = async () => {
       const response = await axios.get(
-        `https://api.dispenseapp.com/2023-03/products?limit=${limit}&skip=${skip}`,
+        `https://api.dispenseapp.com/2023-03/products`,
         {
+          params: {
+            venueId,
+            limit,
+            skip,
+          },
           headers: {
             'x-dispense-api-key': process.env.FLOWER_POWER_API_KEY,
           },
@@ -45,7 +52,7 @@ exports.getAllProducts = async (req, res) => {
           .filter((item) => item.quantity > 0) // Only include products with quantity > 0
           .map((item) => {
             const { thc, desc } = extractTHCAndDescription(item.description || '');
-
+            
             return {
               id: item.id,
               category: item.cannabisComplianceType || item.cannabisType || '',
