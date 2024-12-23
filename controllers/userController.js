@@ -122,7 +122,9 @@ exports.logout = async (req, res, next) => {
 
 exports.getAllUsers = async (req, res, next) => {
   try {
-    const users = await User.findAll()
+    const users = await User.findAll({
+      attributes: ['id', 'fname', 'lname', 'email', 'dob', 'country', 'phone', 'points', 'createdAt']
+    });
 
     if (!users) {
       throw new AppError('Not Found', 404, { field: 'user', issue: 'Error fetching users' });
@@ -137,7 +139,9 @@ exports.getAllUsers = async (req, res, next) => {
 
 exports.getUserById = async (req, res, next) => {
   try {
-    const user = await User.findByPk(req.params.id)
+    const user = await User.findByPk(req.params.id, {
+      attributes: ['id', 'fname', 'lname', 'email', 'dob', 'country', 'phone', 'points', 'createdAt']
+    });
 
     if (!user) {
       throw new AppError('Not Found', 404, { field: 'user', issue: 'User not found' });
@@ -158,7 +162,8 @@ exports.getUserByEmail = async (req, res, next) => {
         email: email,
         business_id: req.business_id
       },
-    })
+      attributes: ['id', 'fname', 'lname', 'email', 'dob', 'country', 'phone', 'points', 'createdAt']
+    });
 
     if (!user) {
       throw new AppError('Not Found', 404, { field: 'user', issue: 'User not found' });
@@ -179,7 +184,8 @@ exports.getUserByPhone = async (req, res, next) => {
         phone: phone,
         business_id: req.business_id
       },
-    })
+      attributes: ['id', 'fname', 'lname', 'email', 'dob', 'country', 'phone', 'points', 'createdAt']
+    });
 
     if (!user) {
       throw new AppError('Not Found', 404, { field: 'user', issue: 'User not found' });
@@ -243,7 +249,19 @@ exports.registerUser = async (req, res, next) => {
       console.error('Error calling external API:', apiError.response ? apiError.response.data : apiError.message);
     });
 
-    res.status(201).json(newUser)
+    const responseUser = {
+      id: newUser.id,
+      fname: newUser.fname,
+      lname: newUser.lname,
+      email: newUser.email,
+      dob: newUser.dob,
+      country: newUser.country,
+      phone: newUser.phone,
+      points: newUser.points,
+      createdAt: newUser.createdAt,
+    };
+
+    res.status(201).json(responseUser);
   } catch (error) {
     res.status(500).json({ error: `${error}` })
   }
@@ -272,6 +290,16 @@ exports.deleteUser = async (req, res, next) => {
 exports.addPoints = async (req, res, next) => {
   let { userId, amount } = req.body
   try {
+
+    if (amount <= 0) {
+      throw new AppError('Invalid Amount', 400, { field: 'amount', issue: 'Amount must be a positive number' });
+    }
+
+    const user = await User.findByPk(userId);
+    if (!user) {
+      throw new AppError('Invalid User', 404, { field: 'userId', issue: 'User does not exist' });
+    }
+
     let result = await dt.incrementUserPoints(userId, amount, req.business_id)
 
     if (!result) {
@@ -289,6 +317,24 @@ exports.addPoints = async (req, res, next) => {
 exports.redeemPoints = async (req, res, next) => {
   let { userId, amount } = req.body
   try {
+
+    if (amount <= 0) {
+      throw new AppError('Invalid Amount', 400, { field: 'amount', issue: 'Amount must be a positive number' });
+    }
+
+    const user = await User.findByPk(userId);
+    if (!user) {
+      throw new AppError('Invalid User', 404, { field: 'userId', issue: 'User does not exist' });
+    }
+
+    const currentPoints = await dt.getUserPoints(userId, req.business_id);
+    if (currentPoints < amount) {
+      throw new AppError('Insufficient Points', 400, {
+        field: 'amount',
+        issue: 'User does not have enough points to redeem',
+      });
+    }
+
     let result = await dt.decrementUserPoints(userId, amount, req.business_id)
 
     if (!result) {

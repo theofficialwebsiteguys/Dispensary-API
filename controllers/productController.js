@@ -63,6 +63,7 @@ exports.getAllProducts = async (req, res) => {
               thc, // Extracted THC percentage or null
               weight: item.weightFormatted || '',
               price: item.price || '',
+              quantity: item.quantity || 0,
               image: item.image || item.images?.[0] || '',
             };
           });
