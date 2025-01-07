@@ -33,6 +33,10 @@ const Order = sequelize.define('Order', {
             min: 0
         }
     },
+    complete: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+    }
 }, {
     timestamps: true,
     tableName: 'Orders',
