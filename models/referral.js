@@ -14,7 +14,7 @@ const Referral = sequelize.define('Referral',
       allowNull: false,
       references: {
         model: User,
-        key: 'sessionId',
+        key: 'id',
       },
     },
     referred_email: {

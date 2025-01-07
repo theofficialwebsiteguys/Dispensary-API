@@ -33,8 +33,8 @@ Notification.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 User.hasMany(Notification, { foreignKey: 'userId', as: 'notifications' });
 
 // FK for sessionId on Order model
-Order.belongsTo(Session, { foreignKey: 'session_id' });
-Session.hasMany(Order, { foreignKey: 'session_id' });
+Order.belongsTo(User, { foreignKey: 'user_id' });
+User.hasMany(Order, { foreignKey: 'user_id' });
 
 // Sync all models with the database
 sequelize.sync({ alter: true }) // change to force: true to drop all data and tables and recreate based on model definitions
