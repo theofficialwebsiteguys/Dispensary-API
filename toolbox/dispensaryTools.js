@@ -125,7 +125,7 @@ async function sendEmail(email) {
 
 
 async function checkAlleavesOrder(pos_order_id) {
-  let pending_order = []
+  let order_details = []
   try {
     api_url = `https://app.alleaves.com/api/order/${pos_order_id}`
     await fetch(api_url, {
@@ -137,7 +137,7 @@ async function checkAlleavesOrder(pos_order_id) {
     })
       .then((response) => { return response.json() })
       .then((data) => {
-        if (!data.error && data.complete == false) {
+        if (!data.error) {
           let order_json = {}
           let items_json = {}
 
@@ -145,6 +145,7 @@ async function checkAlleavesOrder(pos_order_id) {
           order_json["total"] = data.total
           order_json["pickup_date"] = data.pickup_date
           order_json["pickup_time"] = data.pickup_time
+          order_json["complete"] = data.complete
 
           data.items.forEach((item) => {
             if (!items_json[`${item.id_inventory_item}`]) {
@@ -155,11 +156,11 @@ async function checkAlleavesOrder(pos_order_id) {
           })
 
           order_json["items"] = items_json
-          pending_order.push(order_json)
+          order_details.push(order_json)
         }
       })
 
-    return pending_order
+    return order_details
 
   } catch (error) {
     console.log('Error retrieving data: ', error)
@@ -170,7 +171,7 @@ async function checkAlleavesOrder(pos_order_id) {
 async function checkUserOrders(userId) {
   try {
     let orders = []
-    let active_orders = []
+    let orders_details = []
     const response = await Order.findAll({
       where: {
         user_id: userId
@@ -182,12 +183,17 @@ async function checkUserOrders(userId) {
       for (const order of orders) {
         const orderInfo = await checkAlleavesOrder(order['dataValues']['pos_order_id'])
         if (orderInfo.length > 0) {
-          active_orders.push(...orderInfo)
+          orders_details.push(...orderInfo)
+          if (orderInfo.complete = true) {
+            await order.update({
+              complete: true
+            })
+          }
         }
       }
     }
 
-    return active_orders
+    return orders_details
 
   } catch (error) {
     console.error('Error getting orders: ', error)
@@ -203,8 +209,6 @@ module.exports = {
   sendEmail,
   checkUserOrders,
 }
-
-
 
 
 // async function authenticateApiKey(req, res, next) {
