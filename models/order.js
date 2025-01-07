@@ -18,6 +18,20 @@ const Order = sequelize.define('Order', {
     },
     pos_order_id: {
         type: DataTypes.STRING,
+    },
+    points_add: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0,
+        validate: {
+            min: 0
+        }
+    },
+    points_redeem: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0,
+        validate: {
+            min: 0
+        }
     }
 }, {
     timestamps: true,
