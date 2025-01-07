@@ -3,6 +3,7 @@
 const express = require('express')
 const userController = require('../controllers/userController')
 const { authenticateRequest, validateResetToken } = require('../middleware/authMiddleware');
+const toolbox = require('../toolbox/dispensaryTools')
 
 const router = express.Router()
 
@@ -18,7 +19,12 @@ router.get('/validate-reset-token', validateResetToken, (req, res) => {
   
 router.use(authenticateRequest);
 
-router.get('/validate-session', (req, res) => {
+router.get('/validate-session', async (req, res) => {
+    console.log(req.user_id)
+    if (req.user_id !== undefined) {
+        let x = await toolbox.checkUserOrders(req.user_id);
+        console.log("FINAL RESPONSE", x)
+    }
     res.status(200).json({ valid: true });
 });
 

@@ -32,7 +32,7 @@ const Order = sequelize.define('Order', {
         validate: {
             min: 0
         }
-    }
+    },
 }, {
     timestamps: true,
     tableName: 'Orders',
