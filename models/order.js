@@ -1,6 +1,6 @@
 const sequelize = require('../db')
 const { DataTypes } = require('sequelize')
-const Session = require('./session')
+const User = require('./user')
 
 const Order = sequelize.define('Order', {
     id: {
@@ -8,12 +8,12 @@ const Order = sequelize.define('Order', {
         autoIncrement: true,
         primaryKey: true,
     },
-    session_id: {
-        type: DataTypes.UUID,
+    user_id: {
+        type: DataTypes.INTEGER,
         allowNull: false,
         references: {
-          model: Session,
-          key: 'sessionId',
+          model: User,
+          key: 'id',
         },
     },
     pos_order_id: {
