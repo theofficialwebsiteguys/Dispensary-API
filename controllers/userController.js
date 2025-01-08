@@ -545,7 +545,7 @@ exports.updateUser = async (req, res, next) => {
 }
 
 
-exports.getUserPushToken = async (req, res) => {
+exports.getUserPushToken = async (req, res, next) => {
   try {
 
     const { email } = req.body;
@@ -567,7 +567,7 @@ exports.getUserPushToken = async (req, res) => {
 }
 
 
-exports.updateUserPushToken = async (req, res) => {
+exports.updateUserPushToken = async (req, res, next) => {
   try {
     const { email, token } = req.body;
 
