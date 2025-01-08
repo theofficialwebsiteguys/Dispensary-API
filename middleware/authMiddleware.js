@@ -1,4 +1,4 @@
-const { Session, Business, User } = require('../models'); 
+const { Session, Business, User } = require('../models');
 const { Op } = require('sequelize');
 const AppError = require('../toolbox/appErrorClass')
 
@@ -18,6 +18,14 @@ const authenticateRequest = async (req, res, next) => {
 
       if (!session) {
         throw new AppError('Unauthenticated request', 400, { field: 'authorizationHeader', issue: 'Invalid session provided for authentication' });
+      }
+
+      // Check if the session has expired
+      if (session.expiresAt < new Date()) {
+        // Remove the expired session
+        await session.destroy();
+
+        throw new AppError('Unauthenticated request', 401, { field: 'authorizationHeader', issue: 'Session has expired and has been removed' });
       }
 
       req.session = session; // Attach session data to the request
@@ -71,7 +79,7 @@ const validateResetToken = async (req, res, next) => {
 
     next();
   } catch (error) {
-    next(error); 
+    next(error);
   }
 };
 
