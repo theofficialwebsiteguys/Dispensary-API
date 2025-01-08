@@ -553,11 +553,11 @@ exports.getUserPushToken = async (req, res) => {
     const user = await User.findOne({ where: { email } }, { attributes: ['pushToken'] });
 
     if (!user) {
-      throw new AppError(`User with email ${email} not found`);
+      throw new AppError(`User with email ${email} not found`, 400, { field: 'pushToken', issue: 'No user found' });
     }
 
     if (!user.pushToken) {
-      throw new AppError(`Push token not found for user with email ${email}`);
+      throw new AppError(`Push token not found for user with email ${email}`, 400, { field: 'pushToken', issue: 'pushToken not found' });
     }
 
     return user.pushToken;
