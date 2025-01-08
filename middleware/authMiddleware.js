@@ -17,15 +17,14 @@ const authenticateRequest = async (req, res, next) => {
       });
 
       if (!session) {
-        throw new AppError('Unauthenticated request', 400, { field: 'authorizationHeader', issue: 'Invalid session provided for authentication' });
-      }
+        await Session.destroy({
+          where: {
+            sessionId: authorizationHeader,
+            expiresAt: { [Op.lte]: new Date() }, // Expired session
+          },
+        });
 
-      // Check if the session has expired
-      if (session.expiresAt < new Date()) {
-        // Remove the expired session
-        await session.destroy();
-
-        throw new AppError('Unauthenticated request', 401, { field: 'authorizationHeader', issue: 'Session has expired and has been removed' });
+        throw new AppError('Unauthenticated request', 401, { field: 'authorizationHeader', issue: 'Invalid session provided for authentication' });
       }
 
       req.session = session; // Attach session data to the request
