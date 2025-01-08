@@ -29,6 +29,7 @@ const authenticateRequest = async (req, res, next) => {
 
       req.session = session; // Attach session data to the request
       req.business_id = session.businessProfileKey;
+      req.user_id = session.userId
       return next();
     }
 
