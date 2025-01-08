@@ -561,9 +561,8 @@ exports.getUserPushToken = async (req, res) => {
     }
 
     return user.pushToken;
-  } catch (error) {
-    console.error('Error retrieving push token:', error.message);
-    throw error;
+  } catch(error) {
+    next(error)
   }
 }
 
@@ -592,9 +591,8 @@ exports.updateUserPushToken = async (req, res) => {
     }
 
     return res.status(200).json({ message: 'Push token is already up-to-date.' });
-  } catch (error) {
-    console.error('Error updating push token:', error.message);
-    return res.status(500).json({ message: 'Internal server error.', error: error.message });
+  } catch(error) {
+    next(error)
   }
 };
 
