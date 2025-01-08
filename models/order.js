@@ -32,6 +32,10 @@ const Order = sequelize.define('Order', {
         validate: {
             min: 0
         }
+    },
+    complete: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
     }
 }, {
     timestamps: true,
