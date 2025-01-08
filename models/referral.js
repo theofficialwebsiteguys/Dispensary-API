@@ -1,6 +1,3 @@
-//TODO: link business_id to referral email/phone constraint s.t. each email or phone can be used once and only once per business_id
-//TODO: integrate ./validators/phoneNumbers to the validators of Referral
-
 const sequelize = require('../db')
 const { DataTypes } = require('sequelize')
 const User = require('./user')
