@@ -1,3 +1,5 @@
+require('dotenv').config()
+
 const bcrypt = require('bcryptjs')
 const { Op } = require('sequelize');
 const nodemailer = require('nodemailer')
@@ -6,6 +8,7 @@ const Business = require('../models/business')
 const Referral = require('../models/referral')
 const User = require('../models/user')
 const Session = require('../models/session')
+const Order = require('../models/order')
 
 const AppError = require('./appErrorClass')
 
@@ -121,6 +124,81 @@ async function sendEmail(email) {
 }
 
 
+async function checkAlleavesOrder(pos_order_id) {
+  let order_details = []
+  try {
+    api_url = `https://app.alleaves.com/api/order/${pos_order_id}`
+    await fetch(api_url, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${process.env.ALLEAVES_AUTH_TOKEN}`,
+        Accept: 'application/json; charset=utf-8'
+      }
+    })
+      .then((response) => { return response.json() })
+      .then((data) => {
+        if (!data.error) {
+          let order_json = {}
+          let items_json = {}
+
+          order_json["id_order"] = data.id_order
+          order_json["total"] = data.total
+          order_json["pickup_date"] = data.pickup_date
+          order_json["pickup_time"] = data.pickup_time
+          order_json["complete"] = data.complete
+
+          data.items.forEach((item) => {
+            if (!items_json[`${item.id_inventory_item}`]) {
+              items_json[`${item.id_inventory_item}`] = 1
+            } else {
+              items_json[`${item.id_inventory_item}`] += 1
+            }
+          })
+
+          order_json["items"] = items_json
+          order_details.push(order_json)
+        }
+      })
+
+    return order_details
+
+  } catch (error) {
+    console.log('Error retrieving data: ', error)
+  }
+}
+
+
+async function checkUserOrders(userId) {
+  try {
+    let orders = []
+    let orders_details = []
+    const response = await Order.findAll({
+      where: {
+        user_id: userId
+      }
+    })
+
+    orders = response
+    if (orders.length > 0) {
+      for (const order of orders) {
+        const orderInfo = await checkAlleavesOrder(order['dataValues']['pos_order_id'])
+        if (orderInfo.length > 0) {
+          orders_details.push(...orderInfo)
+          if (orderInfo.complete = true) {
+            await order.update({
+              complete: true
+            })
+          }
+        }
+      }
+    }
+
+    return orders_details
+
+  } catch (error) {
+    console.error('Error getting orders: ', error)
+  }
+}
 
 module.exports = {
   findReferralByEmail,
@@ -129,9 +207,8 @@ module.exports = {
   decrementUserPoints,
   incrementUserPoints,
   sendEmail,
+  checkUserOrders,
 }
-
-
 
 
 // async function authenticateApiKey(req, res, next) {
