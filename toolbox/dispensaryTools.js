@@ -124,21 +124,45 @@ async function sendEmail(email) {
 }
 
 
-async function getAlleavesApiToken() {
-    const user = process.env.ALLEAVES_USER
-    const password = process.env.ALLEAVES_PASSWORD
+function generateBasicAuthToken(username, password) {
+  const credentials = btoa(`${username}:${password}`); 
+  return `${credentials}`;
 }
 
 
-async function checkAlleavesOrder(pos_order_id, authTokens) {
-  let order_details = []
-  let alleavesToken = authTokens["alleaves"]
+async function getAlleavesApiToken() {
+    const user = process.env.ALLEAVES_USER
+    const password = process.env.ALLEAVES_PASS
+    const basicAuth = generateBasicAuthToken(user, password)
+    let newToken = ""
 
-  // if there is no token stored in the JSON obj from checkAllOrders, get a new one and pass it back up to be used in next call
-  if (allLeavesToken.length == 0) {
-    allLeavesToken = await getAlleavesApiToken();
-    authTokens["alleaves"] = allLeavesToken;
-  }
+    try {
+      let api_url = `https://app.alleaves.com/api/auth`
+      await fetch(api_url, {
+        method: 'POST',
+        headers: {
+          Authorization: `Basic ${basicAuth}`,
+          Accept: 'application/json; charset=utf-8'
+        }
+      })
+        .then((response) => {return response.json() })
+        .then((data) => {
+          newToken = data.token
+        })
+
+      return newToken
+
+    } catch (error) {
+      console.error('error creating alleaves api token', error)
+    }
+
+
+}
+
+
+async function checkAlleavesOrder(pos_order_id) {
+  let order_details = []
+  let alleavesToken = await getAlleavesApiToken()
 
   try {
     let api_url = `https://app.alleaves.com/api/order/${pos_order_id}`
@@ -161,6 +185,7 @@ async function checkAlleavesOrder(pos_order_id, authTokens) {
           order_json["pickup_time"] = data.pickup_time
           order_json["complete"] = data.complete
           order_json["status"] = data.status
+          order_json["paid_in_full"] = data.paid_in_full
 
           data.items.forEach((item) => {
             if (!items_json[`${item.id_inventory_item}`]) {
@@ -184,10 +209,6 @@ async function checkAlleavesOrder(pos_order_id, authTokens) {
 
 
 async function checkUserOrders(userId) {
-  let authTokens = {
-    "alleaves": ""
-  }
-
   try {
     let orders = []
     let orders_details = []
@@ -204,8 +225,8 @@ async function checkUserOrders(userId) {
         // Can add some sort of check here for which POS the order belongs to, and run corresponding function
         // if order.user.business.pos is typeof(AlleavesOrder)...
         // elif order.user.business.pos is typeof(MagicalFruitOrder)...
-        
-        const orderInfo = await checkAlleavesOrder(order['dataValues']['pos_order_id'], authTokens)
+
+        const orderInfo = await checkAlleavesOrder(order['dataValues']['pos_order_id'])
 
         if (orderInfo.length > 0) {
           orders_details.push(...orderInfo)
@@ -233,6 +254,7 @@ module.exports = {
   incrementUserPoints,
   sendEmail,
   checkUserOrders,
+  getAlleavesApiToken
 }
 
 
