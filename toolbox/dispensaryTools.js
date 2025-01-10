@@ -124,14 +124,52 @@ async function sendEmail(email) {
 }
 
 
+function generateBasicAuthToken(username, password) {
+  const credentials = btoa(`${username}:${password}`); 
+  return `${credentials}`;
+}
+
+
+async function getAlleavesApiToken() {
+    const user = process.env.ALLEAVES_USER
+    const password = process.env.ALLEAVES_PASS
+    const basicAuth = generateBasicAuthToken(user, password)
+    let newToken = ""
+
+    try {
+      let api_url = `https://app.alleaves.com/api/auth`
+      await fetch(api_url, {
+        method: 'POST',
+        headers: {
+          Authorization: `Basic ${basicAuth}`,
+          Accept: 'application/json; charset=utf-8'
+        }
+      })
+        .then((response) => {return response.json() })
+        .then((data) => {
+          newToken = data.token
+        })
+
+      return newToken
+
+    } catch (error) {
+      console.error('error creating alleaves api token', error)
+    }
+
+
+}
+
+
 async function checkAlleavesOrder(pos_order_id) {
   let order_details = []
+  let alleavesToken = await getAlleavesApiToken()
+
   try {
     let api_url = `https://app.alleaves.com/api/order/${pos_order_id}`
     await fetch(api_url, {
       method: 'GET',
       headers: {
-        Authorization: `Bearer ${process.env.ALLEAVES_AUTH_TOKEN}`,
+        Authorization: `Bearer ${alleavesToken}`,
         Accept: 'application/json; charset=utf-8'
       }
     })
@@ -146,6 +184,8 @@ async function checkAlleavesOrder(pos_order_id) {
           order_json["pickup_date"] = data.pickup_date
           order_json["pickup_time"] = data.pickup_time
           order_json["complete"] = data.complete
+          order_json["status"] = data.status
+          order_json["paid_in_full"] = data.paid_in_full
 
           data.items.forEach((item) => {
             if (!items_json[`${item.id_inventory_item}`]) {
@@ -181,7 +221,13 @@ async function checkUserOrders(userId) {
     orders = response
     if (orders.length > 0) {
       for (const order of orders) {
+        // To make this extensible for future applications/changing a POS,
+        // Can add some sort of check here for which POS the order belongs to, and run corresponding function
+        // if order.user.business.pos is typeof(AlleavesOrder)...
+        // elif order.user.business.pos is typeof(MagicalFruitOrder)...
+
         const orderInfo = await checkAlleavesOrder(order['dataValues']['pos_order_id'])
+
         if (orderInfo.length > 0) {
           orders_details.push(...orderInfo)
           if (orderInfo.complete = true) {
@@ -208,6 +254,7 @@ module.exports = {
   incrementUserPoints,
   sendEmail,
   checkUserOrders,
+  getAlleavesApiToken
 }
 
 

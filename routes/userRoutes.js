@@ -20,13 +20,20 @@ router.get('/validate-reset-token', validateResetToken, (req, res) => {
 router.use(authenticateRequest);
 
 router.get('/validate-session', async (req, res) => {
-    console.log(req.user_id)
-    let x;
-    if (req.user_id !== undefined) {
-        x = await toolbox.checkUserOrders(req.user_id);
-        console.log("FINAL RESPONSE", x)
+    let ordersData;
+    let authTokens = {
+        "alleaves": "",
+        "tomato": ""
     }
-    res.status(200).json({ valid: true, orders: x });
+    
+    if (req.user_id !== undefined) {
+        // get user order information
+        ordersData = await toolbox.checkUserOrders(req.user_id);
+
+        alleavesToken = await toolbox.getAlleavesApiToken();
+        authTokens["alleaves"] = alleavesToken
+    }
+    res.status(200).json({ valid: true, orders: ordersData, authTokens: authTokens });
 });
 
 router.get('/', userController.getAllUsers)
