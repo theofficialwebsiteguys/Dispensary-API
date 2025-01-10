@@ -55,6 +55,7 @@ exports.getAllProducts = async (req, res) => {
             
             return {
               id: item.id,
+              posProductId: item.posProductId,
               category: item.cannabisComplianceType || item.cannabisType || '',
               title: item.name || '',
               desc,
