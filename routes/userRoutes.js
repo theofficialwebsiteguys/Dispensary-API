@@ -16,16 +16,17 @@ router.post('/reset-password', validateResetToken, userController.resetPassword)
 router.get('/validate-reset-token', validateResetToken, (req, res) => {
     res.status(200).json({ success: true, message: 'Reset token is valid.' });
 });
-  
+ 
 router.use(authenticateRequest);
 
 router.get('/validate-session', async (req, res) => {
     console.log(req.user_id)
+    let x;
     if (req.user_id !== undefined) {
-        let x = await toolbox.checkUserOrders(req.user_id);
+        x = await toolbox.checkUserOrders(req.user_id);
         console.log("FINAL RESPONSE", x)
     }
-    res.status(200).json({ valid: true });
+    res.status(200).json({ valid: true, orders: x });
 });
 
 router.get('/', userController.getAllUsers)

@@ -18,9 +18,9 @@ exports.createOrder = async (req, res, next) => {
         };
     
         res.status(201).json(responseOrder);
-      } catch (error) {
+    } catch (error) {
         res.status(500).json({ error: `${error}` })
-      }
+    }
 }
 
 

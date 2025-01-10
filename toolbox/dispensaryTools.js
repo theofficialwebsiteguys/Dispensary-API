@@ -127,7 +127,7 @@ async function sendEmail(email) {
 async function checkAlleavesOrder(pos_order_id) {
   let order_details = []
   try {
-    api_url = `https://app.alleaves.com/api/order/${pos_order_id}`
+    let api_url = `https://app.alleaves.com/api/order/${pos_order_id}`
     await fetch(api_url, {
       method: 'GET',
       headers: {
