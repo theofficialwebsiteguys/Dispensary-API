@@ -21,12 +21,12 @@ router.use(authenticateRequest);
 
 router.get('/validate-session', async (req, res) => {
     console.log(req.user_id)
-    let x;
+    let ordersData;
     if (req.user_id !== undefined) {
-        x = await toolbox.checkUserOrders(req.user_id);
-        console.log("FINAL RESPONSE", x)
+        ordersData = await toolbox.checkUserOrders(req.user_id);
+        console.log("FINAL RESPONSE", ordersData)
     }
-    res.status(200).json({ valid: true, orders: x });
+    res.status(200).json({ valid: true, orders: ordersData });
 });
 
 router.get('/', userController.getAllUsers)
