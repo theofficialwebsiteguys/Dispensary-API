@@ -124,14 +124,28 @@ async function sendEmail(email) {
 }
 
 
-async function checkAlleavesOrder(pos_order_id) {
+async function getAlleavesApiToken() {
+    const user = process.env.ALLEAVES_USER
+    const password = process.env.ALLEAVES_PASSWORD
+}
+
+
+async function checkAlleavesOrder(pos_order_id, authTokens) {
   let order_details = []
+  let alleavesToken = authTokens["alleaves"]
+
+  // if there is no token stored in the JSON obj from checkAllOrders, get a new one and pass it back up to be used in next call
+  if (allLeavesToken.length == 0) {
+    allLeavesToken = await getAlleavesApiToken();
+    authTokens["alleaves"] = allLeavesToken;
+  }
+
   try {
     let api_url = `https://app.alleaves.com/api/order/${pos_order_id}`
     await fetch(api_url, {
       method: 'GET',
       headers: {
-        Authorization: `Bearer ${process.env.ALLEAVES_AUTH_TOKEN}`,
+        Authorization: `Bearer ${alleavesToken}`,
         Accept: 'application/json; charset=utf-8'
       }
     })
@@ -146,6 +160,7 @@ async function checkAlleavesOrder(pos_order_id) {
           order_json["pickup_date"] = data.pickup_date
           order_json["pickup_time"] = data.pickup_time
           order_json["complete"] = data.complete
+          order_json["status"] = data.status
 
           data.items.forEach((item) => {
             if (!items_json[`${item.id_inventory_item}`]) {
@@ -169,6 +184,10 @@ async function checkAlleavesOrder(pos_order_id) {
 
 
 async function checkUserOrders(userId) {
+  let authTokens = {
+    "alleaves": ""
+  }
+
   try {
     let orders = []
     let orders_details = []
@@ -181,7 +200,13 @@ async function checkUserOrders(userId) {
     orders = response
     if (orders.length > 0) {
       for (const order of orders) {
-        const orderInfo = await checkAlleavesOrder(order['dataValues']['pos_order_id'])
+        // To make this extensible for future applications/changing a POS,
+        // Can add some sort of check here for which POS the order belongs to, and run corresponding function
+        // if order.user.business.pos is typeof(AlleavesOrder)...
+        // elif order.user.business.pos is typeof(MagicalFruitOrder)...
+        
+        const orderInfo = await checkAlleavesOrder(order['dataValues']['pos_order_id'], authTokens)
+
         if (orderInfo.length > 0) {
           orders_details.push(...orderInfo)
           if (orderInfo.complete = true) {
