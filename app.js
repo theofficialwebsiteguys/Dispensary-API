@@ -14,6 +14,7 @@ const userRoutes = require('./routes/userRoutes')
 const notificationRoutes = require('./routes/notificationRoutes')
 const productRoutes = require('./routes/productRoutes')
 const orderRoutes = require('./routes/orderRoutes')
+const sessionRoutes = require('./routes/sessionRoutes')
 
 const app = express()
 
@@ -55,6 +56,7 @@ app.use('/api/users', userRoutes)
 app.use('/api/notifications', notificationRoutes)
 app.use('/api/products', productRoutes)
 app.use('/api/orders', orderRoutes)
+app.use('/api/sessions', sessionRoutes)
 
 // error handling must go after route definitions
 app.use(errorHandler)
