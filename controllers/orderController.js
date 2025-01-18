@@ -6,8 +6,11 @@ const AppError = require('../toolbox/appErrorClass');
 exports.createOrder = async (req, res, next) => {
     try {
         let { user_id, pos_order_id, points_add, points_redeem } = req.body
-    
-        const newOrder = await Order.create({ user_id, pos_order_id, points_add, points_redeem })
+        console.log(points_add)
+        let pointsAdd = Number(Math.floor(points_add))
+        console.log(pointsAdd)
+        let pointsRedeem = Number(Math.floor(points_redeem))
+        const newOrder = await Order.create({ user_id, pos_order_id, points_add: pointsAdd, points_redeem: pointsRedeem })
 
         const responseOrder = {
           id: newOrder.id,

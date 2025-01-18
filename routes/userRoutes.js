@@ -22,8 +22,7 @@ router.use(authenticateRequest);
 router.get('/validate-session', async (req, res) => {
     let ordersData;
     let authTokens = {
-        "alleaves": "",
-        "tomato": ""
+        "alleaves": ""
     }
     
     if (req.user_id !== undefined) {

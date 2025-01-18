@@ -16,6 +16,7 @@ const PASSWORD_RESET_TOKEN_EXPIRY = 3600; // Token expiry in seconds (1 hour)
 //const User = require('../models/user')
 const dt = require('../toolbox/dispensaryTools')
 const AppError = require('../toolbox/appErrorClass');
+const toolbox = require('../toolbox/dispensaryTools')
 const { now } = require('sequelize/lib/utils');
 
 
@@ -123,7 +124,7 @@ exports.logout = async (req, res, next) => {
 exports.getAllUsers = async (req, res, next) => {
   try {
     const users = await User.findAll({
-      attributes: ['id', 'fname', 'lname', 'email', 'dob', 'country', 'phone', 'points', 'createdAt']
+      attributes: ['id', 'fname', 'lname', 'email', 'dob', 'country', 'phone', 'points', 'createdAt', 'alleaves_customer_id']
     });
 
     if (!users) {
@@ -140,7 +141,7 @@ exports.getAllUsers = async (req, res, next) => {
 exports.getUserById = async (req, res, next) => {
   try {
     const user = await User.findByPk(req.params.id, {
-      attributes: ['id', 'fname', 'lname', 'email', 'dob', 'country', 'phone', 'points', 'createdAt']
+      attributes: ['id', 'fname', 'lname', 'email', 'dob', 'country', 'phone', 'points', 'createdAt', 'alleaves_customer_id']
     });
 
     if (!user) {
@@ -162,7 +163,7 @@ exports.getUserByEmail = async (req, res, next) => {
         email: email,
         business_id: req.business_id
       },
-      attributes: ['id', 'fname', 'lname', 'email', 'dob', 'country', 'phone', 'points', 'createdAt']
+      attributes: ['id', 'fname', 'lname', 'email', 'dob', 'country', 'phone', 'points', 'createdAt', 'alleaves_customer_id']
     });
 
     if (!user) {
@@ -184,7 +185,7 @@ exports.getUserByPhone = async (req, res, next) => {
         phone: phone,
         business_id: req.business_id
       },
-      attributes: ['id', 'fname', 'lname', 'email', 'dob', 'country', 'phone', 'points', 'createdAt']
+      attributes: ['id', 'fname', 'lname', 'email', 'dob', 'country', 'phone', 'points', 'createdAt', 'alleaves_customer_id']
     });
 
     if (!user) {
@@ -232,17 +233,22 @@ exports.registerUser = async (req, res, next) => {
         { where: { id: referral_obj.dataValues.id } }
       )
     }
-    
+
     // Fire and forget external API call
-    axios.post('https://api.dispenseapp.com/2023-03/auth/register', {
+    axios.post('https://app.alleaves.com/api/customer', {
+      name_first: fname,
+      name_last: lname,
+      phone,
       email,
-      password
+      date_of_birth: dob      
     }, {
       headers: {
-        'x-dispense-api-key': process.env.FLOWER_POWER_API_KEY,
+        Authorization: `Bearer ${await toolbox.getAlleavesApiToken()}`,
+        "Content-Type": 'application/json; charset=utf-8',
+        Accept: 'application/json; charset=utf-8'
       },
     }).then(response => {
-      newUser.alpineToken = response.data.token; // Update the push token
+      newUser.alleaves_customer_id = response.data.id_customer; // Update the push token
       newUser.save();
       console.log('External API Response:', response.data);
     }).catch(apiError => {
@@ -300,7 +306,7 @@ exports.addPoints = async (req, res, next) => {
       throw new AppError('Invalid User', 404, { field: 'userId', issue: 'User does not exist' });
     }
 
-    let result = await dt.incrementUserPoints(userId, amount, req.business_id)
+    let result = await dt.incrementUserPoints(userId, amount, user.business_id)
 
     if (!result) {
       throw new AppError('Server Error', 500, { field: 'result', issue: 'Error Adding Points' });
@@ -315,7 +321,9 @@ exports.addPoints = async (req, res, next) => {
 
 
 exports.redeemPoints = async (req, res, next) => {
+  console.log(req.body)
   let { userId, amount } = req.body
+
   try {
 
     if (amount <= 0) {
@@ -327,15 +335,14 @@ exports.redeemPoints = async (req, res, next) => {
       throw new AppError('Invalid User', 404, { field: 'userId', issue: 'User does not exist' });
     }
 
-    const currentPoints = await dt.getUserPoints(userId, req.business_id);
-    if (currentPoints < amount) {
+    if (user.get().points < amount) {
       throw new AppError('Insufficient Points', 400, {
         field: 'amount',
         issue: 'User does not have enough points to redeem',
       });
     }
 
-    let result = await dt.decrementUserPoints(userId, amount, req.business_id)
+    let result = await dt.decrementUserPoints(userId, amount, user.business_id)
 
     if (!result) {
       throw new AppError('Server Error', 500, { field: 'result', issue: 'Error Redeeming Points' });
