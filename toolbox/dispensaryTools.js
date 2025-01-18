@@ -12,6 +12,8 @@ const Order = require('../models/order')
 
 const AppError = require('./appErrorClass')
 
+const userController = require('../controllers/userController')
+
 
 async function findReferralByEmail(email) {
   try {
@@ -220,26 +222,90 @@ async function checkUserOrders(userId) {
 
     orders = response
     if (orders.length > 0) {
-      for (const order of orders) {
-        // To make this extensible for future applications/changing a POS,
-        // Can add some sort of check here for which POS the order belongs to, and run corresponding function
-        // if order.user.business.pos is typeof(AlleavesOrder)...
-        // elif order.user.business.pos is typeof(MagicalFruitOrder)...
 
-        const orderInfo = await checkAlleavesOrder(order['dataValues']['pos_order_id'])
+      // Parallel processing of checkAlleavesOrder to speed things up
+      const orderChecks = orders.map(async (order) => {
+
+        const orderInfo = await checkAlleavesOrder(order['dataValues']['pos_order_id']);
+
+
 
         if (orderInfo.length > 0) {
-          orders_details.push(...orderInfo)
-          if (orderInfo.complete = true) {
-            await order.update({
-              complete: true
-            })
+          orders_details.push(...orderInfo);
+        
+          if (orderInfo[0].complete === true) {
+            let orderDetails = order.get()
+            // Check if the order is already marked complete and points haven't been processed
+            if (!orderDetails.points_awarded) {
+
+              const user = await User.findByPk(orderDetails.user_id);
+
+              if (user) {
+                // Handle adding or redeeming points
+                if (orderDetails.points_add && orderDetails.points_add > 0) {
+                  // Call function to add points
+                  await userController.addPoints(
+                    {
+                      body: {
+                        userId: user.get().id,
+                        amount: orderDetails.points_add
+                      }
+                    }, 
+                    {
+                      status: (code) => ({
+                        json: (data) => console.log(`Status: ${code}`, data)
+                      })
+                    }, 
+                    (error) => {
+                      if (error) console.error('Error adding points:', error);
+                    }
+                  );
+                  console.log(`Added ${orderDetails.points_add} points to user ${user.get().id} for order ${orderDetails.id}`);
+                  
+                } else if (orderDetails.points_redeem && orderDetails.points_redeem > 0) {
+                  // Call function to redeem points
+                  console.log(user.get());
+                
+                  await userController.redeemPoints(
+                    {
+                      body: {
+                        userId: user.get().id,
+                        amount: orderDetails.points_redeem
+                      }
+                    }, 
+                    {
+                      status: (code) => ({
+                        json: (data) => console.log(`Status: ${code}`, data)
+                      })
+                    }, 
+                    (error) => {
+                      if (error) console.error('Error redeeming points:', error);
+                    }
+                  );
+                  
+                  console.log(`Redeemed ${orderDetails.points_redeem} points from user ${user.get().id} for order ${orderDetails.id}`);
+                }
+                
+              }
+        
+              // Update order to mark as complete and points as awarded
+              await order.update({ complete: true, points_awarded: true });
+            } else {
+              // Just ensure the order is marked complete if not already
+              await order.update({ complete: true });
+              console.log(`Order ${order.id} is already complete, and points have been processed.`);
+            }
           }
         }
-      }
+        
+        
+
+      });
+
+      await Promise.all(orderChecks);
     }
 
-    return orders_details
+    return orders_details;
 
   } catch (error) {
     console.error('Error getting orders: ', error)

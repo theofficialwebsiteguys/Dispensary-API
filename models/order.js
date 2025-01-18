@@ -36,7 +36,12 @@ const Order = sequelize.define('Order', {
     complete: {
         type: DataTypes.BOOLEAN,
         defaultValue: false,
-    }
+    },
+    points_awarded: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+      }
+      
 }, {
     timestamps: true,
     tableName: 'Orders',

@@ -119,7 +119,7 @@ const User = sequelize.define('User',
       type: DataTypes.DATE,
       allowNull: true
     },
-    alpineToken: {
+    alleaves_customer_id: {
       type: DataTypes.STRING,
       allowNull: true
     }
