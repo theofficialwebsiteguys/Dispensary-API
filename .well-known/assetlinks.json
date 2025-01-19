@@ -1,0 +1,13 @@
+[
+    {
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "com.websiteguys.flowerpower",
+        "sha256_cert_fingerprints": [
+          "2D:97:E8:55:7F:B9:D8:77:30:09:13:D5:7A:BF:8D:A1:44:03:5D:BE:B0:AF:85:1D:8C:6B:DB:73:F8:CD:62:90"
+        ]
+      }
+    }
+  ]
+  
