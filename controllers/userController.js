@@ -420,12 +420,24 @@ exports.sendResetPassword = async (req, res, next) => {
 };
 
 
-exports.handleResetPasswordRedirect = async (req, res) => {
-  const { token } = req.query;
+exports.handleResetPasswordRedirect = async (req, res, next) => {
+  try {
+    const { token } = req.query;
 
-  const deepLink = `flowerPower://auth?mode=reset-password&token=${token}`;
-  return res.redirect(deepLink);
+    if (!token) {
+      return res.status(400).send('Token is missing.');
+    }
+
+    // Construct the deep link
+    const deepLink = `flowerPower://auth?mode=reset-password&token=${token}`;
+
+    // Redirect the user to the app's deep link
+    return res.redirect(deepLink);
+  } catch (error) {
+    next(error)
+  }
 };
+
 
 
 exports.resetPassword = async (req, res, next) => {
