@@ -52,12 +52,27 @@ exports.getAllProducts = async (req, res) => {
           .filter((item) => item.quantity > 0) // Only include products with quantity > 0
           .map((item) => {
             const { thc, desc } = extractTHCAndDescription(item.description || '');
+
+            // Determine if the item is a vaporizer
+            const isVaporizer =
+            item.cannabisComplianceType === 'VAPORIZERS' ||
+            item.cannabisType === 'VAPORIZERS';
+
+            const category = isVaporizer
+            ? 'CONCENTRATES'
+            : item.cannabisComplianceType || item.cannabisType || '';
+
+            const title = isVaporizer
+              ? (item.name || '').replace(/\b(Vape|Vaporizer)\b\s*\|?/gi, '').trim()
+              : item.name || '';
+
+            const image = isVaporizer ? '' : item.image || item.images?.[0] || '';
             
             return {
               id: item.id,
               posProductId: item.posProductId,
-              category: item.cannabisComplianceType || item.cannabisType || '',
-              title: item.name || '',
+              category,
+              title,
               desc,
               brand: item.brand?.name || '',
               strainType: item.cannabisStrain || '',
@@ -65,7 +80,7 @@ exports.getAllProducts = async (req, res) => {
               weight: item.weightFormatted || '',
               price: item.price || '',
               quantity: item.quantity || 0,
-              image: item.image || item.images?.[0] || '',
+              image,
             };
           });
 
