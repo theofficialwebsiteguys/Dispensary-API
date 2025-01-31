@@ -5,7 +5,11 @@ const AppError = require('../toolbox/appErrorClass');
 const { getUserPushToken } = require('../toolbox/dispensaryTools');
 
 // Load service account key JSON file
-const serviceAccount = require(path.join(__dirname, '../service-account-key.json'));
+if (process.env.GOOGLE_CREDENTIALS) {
+    serviceAccount = JSON.parse(Buffer.from(process.env.GOOGLE_CREDENTIALS, 'base64').toString('utf-8'));
+} else {
+    throw new Error("GOOGLE_CREDENTIALS environment variable is missing.");
+}
 
 if (!admin.apps.length) {
     admin.initializeApp({
