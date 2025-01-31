@@ -312,6 +312,69 @@ async function checkUserOrders(userId) {
   }
 }
 
+
+/**
+ * Retrieves a user's push token.
+ * Used internally by controllers.
+ * 
+ * @param {number} userId - The ID of the user.
+ * @returns {Promise<string>} - The push token of the user.
+ * @throws {AppError} - Throws error if user or token is not found.
+ */
+async function getUserPushToken(userId) {
+  try {
+    const user = await User.findByPk(userId, { attributes: ['pushToken'] });
+
+    if (!user) {
+      throw new AppError(`User with ID ${userId} not found`, 404, { field: 'pushToken', issue: 'No user found' });
+    }
+
+    if (!user.pushToken) {
+      throw new AppError(`Push token not found for user ID ${userId}`, 404, { field: 'pushToken', issue: 'Push token missing' });
+    }
+
+    return user.pushToken;
+  } catch (error) {
+    console.error('Error retrieving push token:', error);
+    throw error;
+  }
+}
+
+/**
+ * Updates a user's push token.
+ * 
+ * @param {string} email - The email of the user.
+ * @param {string} token - The new push token.
+ * @returns {Promise<string>} - A success message.
+ * @throws {AppError} - Throws error if the user is not found.
+ */
+async function updateUserPushToken(email, token) {
+  try {
+    if (!email || !token) {
+      throw new AppError('Email and token are required.', 400, { field: 'updatePushToken', issue: 'Missing required fields' });
+    }
+
+    const user = await User.findOne({ where: { email } });
+
+    if (!user) {
+      throw new AppError(`User with email ${email} not found.`, 404, { field: 'pushToken', issue: 'User not found' });
+    }
+
+    if (user.pushToken !== token) {
+      user.pushToken = token; // Update the push token
+      await user.save();
+      return 'Push token updated successfully.';
+    }
+
+    return 'Push token is already up-to-date.';
+  } catch (error) {
+    console.error('Error updating push token:', error);
+    throw error;
+  }
+}
+
+
+
 module.exports = {
   findReferralByEmail,
   findReferralByPhone,
@@ -320,7 +383,9 @@ module.exports = {
   incrementUserPoints,
   sendEmail,
   checkUserOrders,
-  getAlleavesApiToken
+  getAlleavesApiToken,
+  getUserPushToken,
+  updateUserPushToken
 }
 
 
