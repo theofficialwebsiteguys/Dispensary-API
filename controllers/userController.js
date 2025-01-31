@@ -586,13 +586,15 @@ const { getUserPushToken, updateUserPushToken } = require('../toolbox/dispensary
 
 exports.getUserPushToken = async (req, res, next) => {
   try {
-    const { userId } = req.params;
+    const { email } = req.body;
 
-    if (!userId) {
-      return res.status(400).json({ message: "User ID is required." });
+    const user = await User.findOne({ where: { email } });
+
+    if (!user) {
+      return res.status(400).json({ message: "No User Found." });
     }
 
-    const pushToken = await getUserPushToken(userId); 
+    const pushToken = await getUserPushToken(user.id); 
 
     return res.status(200).json({ userId, pushToken });
   } catch (error) {
