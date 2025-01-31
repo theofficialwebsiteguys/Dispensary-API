@@ -1,79 +1,210 @@
-// controllers/userController.js
 const { Notification, User } = require('../models');
-const { body } = require("express-validator");
 const admin = require('firebase-admin');
-//const serviceAccount = require('./service-account-key.json');
+const path = require('path');
+const AppError = require('../toolbox/appErrorClass');
+const { getUserPushToken } = require('../toolbox/dispensaryTools');
 
-//admin.initializeApp({
-//  credential: admin.credential.cert(serviceAccount),
-//});
+// Load service account key JSON file
+const serviceAccount = require(path.join(__dirname, '../service-account-key.json'));
 
-exports.sendPush = async (req, res) => {
-  const { userId, eventType, payload } = req.body;
+if (!admin.apps.length) {
+    admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount),
+    });
+}
 
-  if (!userId || !eventType || !payload) {
-    return res.status(400).json({ error: 'Invalid request structure' });
-  }
-
+exports.sendPush = async (req, res, next) => {
   try {
-    //Formatting of the notification
-    const notificationData = {
-      userId,
-      eventType,
-      title: payload.title || 'Default Title',
-      message: payload.body,
-      url: payload.url || '',
-    };
+      const { userId, title, body } = req.body;
 
-    //Store the notification to the Database
-    await saveNotificationToDatabase(notificationData);
+      if (!userId || !title || !body) {
+          throw new AppError('Invalid request structure', 400, {
+              field: ['userId', 'title', 'body'],
+              issue: 'Missing required fields'
+          });
+      }
 
-    //Send the push notification
-    const message = {
-      notification: {
-        title: notificationData.title,
-        body: notificationData.message,
-      },
-      token: await getUserPushToken(userId),
-    };
+      // Retrieve user's push token
+      const userToken = await getUserPushToken(userId);
+      if (!userToken) {
+          throw new AppError('User push token not found', 404, {
+              field: 'userId',
+              issue: `No push token found for user ID ${userId}`
+          });
+      }
 
-    const response = await getMessaging().send(message);
+      // Construct FCM message
+      const message = {
+          token: userToken,
+          notification: { title, body },
+          android: {
+              priority: "high",
+              notification: { sound: "default" }
+          },
+          apns: {
+              payload: {
+                  aps: {
+                      sound: "default",
+                      alert: { title, body }
+                  }
+              }
+          }
+      };
 
-    res.status(200).json({ message: 'Notification pushed successfully', notificationId: response });
+      // Send push notification
+      const fcmResponse = await admin.messaging().send(message);
+
+      // Save the notification to the database
+      const savedNotification = await saveNotificationToDatabase({ userId, title, message: body });
+
+      return res.status(200).json({
+          message: 'Notification sent successfully',
+          notificationId: savedNotification.id,
+          fcmResponse: fcmResponse,
+      });
+
   } catch (error) {
-    console.error('Error sending push notification:', error);
-    res.status(500).json({ error: 'Failed to push notification' });
+      next(error); // Pass errors to the global error handler
   }
 };
 
+// Save notification in the database
 async function saveNotificationToDatabase(data) {
-  const notification = await Notification.create({
-    userId: data.userId, // Ensure this matches an existing User ID
-    eventType: data.eventType,
-    title: data.title || null,
-    message: data.message,
-    url: data.url || null,
-    status: 'unread',
-  });
-  return notification;
-}
-
-async function getUserPushToken(userId) {
   try {
-    const user = await User.findByPk(userId, { attributes: ['pushToken'] });
-
-    if (!user) {
-      throw new Error(`User with ID ${userId} not found`);
-    }
-
-    if (!user.pushToken) {
-      throw new Error(`Push token not found for user with ID ${userId}`);
-    }
-
-    return user.pushToken;
+      return await Notification.create({
+          userId: data.userId,
+          title: data.title,
+          message: data.message,
+          status: 'unread',  // Mark notifications as unread by default
+      });
   } catch (error) {
-    console.error('Error retrieving push token:', error.message);
-    throw error;
+      throw new AppError('Error saving notification', 500, {
+          field: 'database',
+          issue: error.message
+      });
   }
 }
 
+
+exports.getUserNotifications = async (req, res, next) => {
+  try {
+      const { userId } = req.query;  // Extract userId from query parameters
+
+      // Ensure the user exists
+      const user = await User.findByPk(userId);
+
+      if (!user) {
+          console.error(`User not found: ${userId}`);
+          return res.status(404).json({ message: `User not found: ${userId}` });
+      }
+
+      // Retrieve all notifications for the user with the matching userId
+      const notifications = await Notification.findAll({
+          where: { userId: user.id },
+      });
+
+      // Return the notifications as a response
+      return res.status(200).json(notifications);
+
+  } catch (error) {
+      // If any error occurs, throw a custom error with details
+      return next(new AppError('Error retrieving notifications', 500, {
+          field: 'database',
+          issue: error.message
+      }));
+  }
+};
+
+
+
+
+
+
+exports.deleteNotification = async (req, res, next) => {
+    try {
+        const { notificationId } = req.params;
+  
+        const notification = await Notification.findByPk(notificationId);
+        if (!notification) {
+            return res.status(404).json({ message: `Notification not found` });
+        }
+  
+        await notification.destroy();
+        return res.status(200).json({ message: `Notification deleted successfully` });
+  
+    } catch (error) {
+        return next(new AppError('Error deleting notification', 500, {
+            field: 'database',
+            issue: error.message
+        }));
+    }
+  };
+  
+
+  exports.deleteAllNotifications = async (req, res, next) => {
+    try {
+        const { userId } = req.body;
+  
+        const user = await User.findByPk(userId);
+        if (!user) {
+            return res.status(404).json({ message: `User not found` });
+        }
+  
+        await Notification.destroy({ where: { userId } });
+        return res.status(200).json({ message: `All notifications deleted successfully` });
+  
+    } catch (error) {
+        return next(new AppError('Error deleting notifications', 500, {
+            field: 'database',
+            issue: error.message
+        }));
+    }
+  };
+  
+
+  exports.markNotificationAsRead = async (req, res, next) => {
+    try {
+        const { notificationId } = req.params;
+  
+        const notification = await Notification.findByPk(notificationId);
+        if (!notification) {
+            return res.status(404).json({ message: `Notification not found` });
+        }
+  
+        notification.status = 'read';
+        await notification.save();
+  
+        return res.status(200).json({ message: `Notification marked as read successfully` });
+  
+    } catch (error) {
+        return next(new AppError('Error marking notification as read', 500, {
+            field: 'database',
+            issue: error.message
+        }));
+    }
+  };
+  
+
+  exports.markAllNotificationsAsRead = async (req, res, next) => {
+    try {
+        const { userId } = req.body;
+  
+        const user = await User.findByPk(userId);
+        if (!user) {
+            return res.status(404).json({ message: `User not found` });
+        }
+  
+        await Notification.update({ status: 'read' }, { where: { userId } });
+  
+        return res.status(200).json({ message: `All notifications marked as read successfully` });
+  
+    } catch (error) {
+        return next(new AppError('Error marking notifications as read', 500, {
+            field: 'database',
+            issue: error.message
+        }));
+    }
+  };
+
+
+  

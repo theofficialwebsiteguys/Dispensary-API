@@ -18,6 +18,7 @@ const dt = require('../toolbox/dispensaryTools')
 const AppError = require('../toolbox/appErrorClass');
 const toolbox = require('../toolbox/dispensaryTools')
 const { now } = require('sequelize/lib/utils');
+const { sendPush } = require('./notificationController');
 
 
 exports.login = [
@@ -312,6 +313,24 @@ exports.addPoints = async (req, res, next) => {
       throw new AppError('Server Error', 500, { field: 'result', issue: 'Error Adding Points' });
     }
 
+
+    // Construct the notification message
+    const notificationData = {
+      userId,
+      title: "You've Earned FPD Bucks! 🎉",
+      body: `Congrats! You've just received ${amount} FPD Bucks! Keep earning rewards.`,
+    };
+
+    // Send push notification
+    const mockReq = { body: notificationData };
+    const mockRes = {
+      status: (code) => ({
+        json: (data) => console.log(`Response Status: ${code}`, data)
+      })
+    };
+
+    await sendPush(mockReq, mockRes, next);
+
     res.status(200).json({ userId: `${userId}`, points_added: `${result}` })
   }
   catch (error) {
@@ -563,25 +582,21 @@ exports.updateUser = async (req, res, next) => {
   }
 }
 
+const { getUserPushToken, updateUserPushToken } = require('../toolbox/dispensaryTools');
 
 exports.getUserPushToken = async (req, res, next) => {
   try {
+    const { userId } = req.params;
 
-    const { email } = req.body;
-
-    const user = await User.findOne({ where: { email } }, { attributes: ['pushToken'] });
-
-    if (!user) {
-      throw new AppError(`User with email ${email} not found`, 400, { field: 'pushToken', issue: 'No user found' });
+    if (!userId) {
+      return res.status(400).json({ message: "User ID is required." });
     }
 
-    if (!user.pushToken) {
-      throw new AppError(`Push token not found for user with email ${email}`, 400, { field: 'pushToken', issue: 'pushToken not found' });
-    }
+    const pushToken = await getUserPushToken(userId); 
 
-    return user.pushToken;
-  } catch(error) {
-    next(error)
+    return res.status(200).json({ userId, pushToken });
+  } catch (error) {
+    next(error);
   }
 }
 
@@ -590,28 +605,11 @@ exports.updateUserPushToken = async (req, res, next) => {
   try {
     const { email, token } = req.body;
 
-    // Validate request parameters
-    if (!email || !token) {
-      return res.status(400).json({ message: 'Email and token are required.' });
-    }
+    const message = await updateUserPushToken(email, token);
 
-    // Find user by email
-    const user = await User.findOne({ where: { email } });
-
-    if (!user) {
-      return res.status(404).json({ message: `User with email ${email} not found.` });
-    }
-
-    // Check if the token has changed
-    if (user.pushToken !== token) {
-      user.pushToken = token; // Update the push token
-      await user.save();
-      return res.status(200).json({ message: 'Push token updated successfully.' });
-    }
-
-    return res.status(200).json({ message: 'Push token is already up-to-date.' });
-  } catch(error) {
-    next(error)
+    return res.status(200).json({ message });
+  } catch (error) {
+    next(error);
   }
 };
 
