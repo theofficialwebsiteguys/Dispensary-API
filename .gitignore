@@ -129,4 +129,4 @@ dist
 .yarn/install-state.gz
 .pnp.*
 
-service-account-key.json
+.service-account-key.json
