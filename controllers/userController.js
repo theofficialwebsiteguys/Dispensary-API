@@ -590,11 +590,13 @@ exports.getUserPushToken = async (req, res, next) => {
 
     const user = await User.findOne({ where: { email } });
 
+    const userId = user.id;
+
     if (!user) {
       return res.status(400).json({ message: "No User Found." });
     }
 
-    const pushToken = await getUserPushToken(user.id); 
+    const pushToken = await getUserPushToken(userId); 
 
     return res.status(200).json({ userId, pushToken });
   } catch (error) {
