@@ -2,13 +2,12 @@
 
 const Order = require('../models/order');
 const AppError = require('../toolbox/appErrorClass');
+const userController = require('../controllers/userController')
 
 exports.createOrder = async (req, res, next) => {
     try {
         let { user_id, pos_order_id, points_add, points_redeem } = req.body
-        console.log(points_add)
         let pointsAdd = Number(Math.floor(points_add))
-        console.log(pointsAdd)
         let pointsRedeem = Number(Math.floor(points_redeem))
         const newOrder = await Order.create({ user_id, pos_order_id, points_add: pointsAdd, points_redeem: pointsRedeem })
 
@@ -19,6 +18,27 @@ exports.createOrder = async (req, res, next) => {
           points_add: newOrder.points_add,
           points_redeem: newOrder.points_redeem
         };
+
+        if (pointsRedeem && pointsRedeem > 0) {        
+          await userController.redeemPoints(
+            {
+              body: {
+                userId: user_id,
+                amount: pointsRedeem
+              }
+            }, 
+            {
+              status: (code) => ({
+                json: (data) => console.log(`Status: ${code}`, data)
+              })
+            }, 
+            (error) => {
+              if (error) console.error('Error redeeming points:', error);
+            }
+          );
+          
+          console.log(`Redeemed ${pointsRedeem} points from user ${user_id} for order ${pos_order_id}`);
+        }
     
         res.status(201).json(responseOrder);
     } catch (error) {

@@ -261,30 +261,30 @@ async function checkUserOrders(userId) {
                     }
                   );
                   console.log(`Added ${orderDetails.points_add} points to user ${user.get().id} for order ${orderDetails.id}`);
-                  
-                } else if (orderDetails.points_redeem && orderDetails.points_redeem > 0) {
-                  // Call function to redeem points
-                  console.log(user.get());
-                
-                  await userController.redeemPoints(
-                    {
-                      body: {
-                        userId: user.get().id,
-                        amount: orderDetails.points_redeem
-                      }
-                    }, 
-                    {
-                      status: (code) => ({
-                        json: (data) => console.log(`Status: ${code}`, data)
-                      })
-                    }, 
-                    (error) => {
-                      if (error) console.error('Error redeeming points:', error);
-                    }
-                  );
-                  
-                  console.log(`Redeemed ${orderDetails.points_redeem} points from user ${user.get().id} for order ${orderDetails.id}`);
                 }
+                // } else if (orderDetails.points_redeem && orderDetails.points_redeem > 0) {
+                //   // Call function to redeem points
+                //   console.log(user.get());
+                
+                //   await userController.redeemPoints(
+                //     {
+                //       body: {
+                //         userId: user.get().id,
+                //         amount: orderDetails.points_redeem
+                //       }
+                //     }, 
+                //     {
+                //       status: (code) => ({
+                //         json: (data) => console.log(`Status: ${code}`, data)
+                //       })
+                //     }, 
+                //     (error) => {
+                //       if (error) console.error('Error redeeming points:', error);
+                //     }
+                //   );
+                  
+                //   console.log(`Redeemed ${orderDetails.points_redeem} points from user ${user.get().id} for order ${orderDetails.id}`);
+                // }
                 
               }
         
