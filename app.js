@@ -25,26 +25,6 @@ const app = express()
 //   credentials: true,
 // };
 
-// app.use(cors(corsOptions));
-app.use(cors({
-  origin: '*', // For development; specify allowed origins for production.
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  preflightContinue: true
-}));
-app.options('*', cors()); // Preflight requests
-
-app.options('*', (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.status(204).end();
-});
-
-
-
-
 // Middleware
 app.use(express.json())
 app.use(logger)
