@@ -186,6 +186,7 @@ async function checkAlleavesOrder(pos_order_id) {
           order_json["pickup_date"] = data.pickup_date
           order_json["pickup_time"] = data.pickup_time
           order_json["complete"] = data.complete
+          order_json["cancel"] = data.cancel
           order_json["status"] = data.status
           order_json["paid_in_full"] = data.paid_in_full
 
@@ -228,8 +229,6 @@ async function checkUserOrders(userId) {
 
         const orderInfo = await checkAlleavesOrder(order['dataValues']['pos_order_id']);
 
-
-
         if (orderInfo.length > 0) {
           orders_details.push(...orderInfo);
         
@@ -260,7 +259,12 @@ async function checkUserOrders(userId) {
                       if (error) console.error('Error adding points:', error);
                     }
                   );
+                  await order.update({ complete: true, points_awarded: true });
                   console.log(`Added ${orderDetails.points_add} points to user ${user.get().id} for order ${orderDetails.id}`);
+                } else if (orderDetails.points_redeem && orderDetails.points_redeem > 0) {
+                    if(orderDetails.points_locked && orderDetails.points_locked > 0){
+                      await order.update({ points_locked: 0 });
+                    }
                 }
                 // } else if (orderDetails.points_redeem && orderDetails.points_redeem > 0) {
                 //   // Call function to redeem points
@@ -289,12 +293,39 @@ async function checkUserOrders(userId) {
               }
         
               // Update order to mark as complete and points as awarded
-              await order.update({ complete: true, points_awarded: true });
+             
             } else {
               // Just ensure the order is marked complete if not already
               await order.update({ complete: true });
               console.log(`Order ${order.id} is already complete, and points have been processed.`);
             }
+          } else if (orderInfo[0].cancel === true) {
+            // If the order is canceled, remove it from the table
+            if(order.points_locked && order.points_locked > 0){
+              const user = await User.findByPk(order.user_id);
+              //add points back to user
+              await userController.addPoints(
+                  {
+                    body: {
+                      userId: user.get().id,
+                      amount: order.points_locked
+                    }
+                  }, 
+                  {
+                    status: (code) => ({
+                      json: (data) => console.log(`Status: ${code}`, data)
+                    })
+                  }, 
+                  (error) => {
+                    if (error) console.error('Error redeeming points:', error);
+                  }
+                );
+                
+                console.log(`Added ${order.points_locked} points back to user ${user.get().id} for order ${order.id}`);
+              
+            }
+            console.log(`Order ${order.id} is canceled. Removing from database.`);
+            await order.destroy();
           }
         }
         
@@ -303,6 +334,9 @@ async function checkUserOrders(userId) {
       });
 
       await Promise.all(orderChecks);
+
+      // Refetch orders after deletions to return only valid orders
+      orders_details = orders_details.filter(order => order.cancel !== true);
     }
 
     return orders_details;

@@ -125,7 +125,7 @@ exports.logout = async (req, res, next) => {
 exports.getAllUsers = async (req, res, next) => {
   try {
     const users = await User.findAll({
-      attributes: ['id', 'fname', 'lname', 'email', 'dob', 'country', 'phone', 'points', 'createdAt', 'alleaves_customer_id']
+      attributes: ['id', 'fname', 'lname', 'email', 'dob', 'country', 'phone', 'points', 'createdAt', 'alleaves_customer_id', 'role']
     });
 
     if (!users) {
@@ -142,7 +142,7 @@ exports.getAllUsers = async (req, res, next) => {
 exports.getUserById = async (req, res, next) => {
   try {
     const user = await User.findByPk(req.params.id, {
-      attributes: ['id', 'fname', 'lname', 'email', 'dob', 'country', 'phone', 'points', 'createdAt', 'alleaves_customer_id']
+      attributes: ['id', 'fname', 'lname', 'email', 'dob', 'country', 'phone', 'points', 'createdAt', 'alleaves_customer_id', 'role']
     });
 
     if (!user) {
@@ -157,14 +157,14 @@ exports.getUserById = async (req, res, next) => {
 
 
 exports.getUserByEmail = async (req, res, next) => {
-  const { email } = req.body
+  const { email } = req.query
   try {
     const user = await User.findOne({
       where: {
         email: email,
         business_id: req.business_id
       },
-      attributes: ['id', 'fname', 'lname', 'email', 'dob', 'country', 'phone', 'points', 'createdAt', 'alleaves_customer_id']
+      attributes: ['id', 'fname', 'lname', 'email', 'dob', 'country', 'phone', 'points', 'createdAt', 'alleaves_customer_id', 'role']
     });
 
     if (!user) {
@@ -179,11 +179,22 @@ exports.getUserByEmail = async (req, res, next) => {
 
 
 exports.getUserByPhone = async (req, res, next) => {
-  const { phone } = req.body
+  let { phone } = req.query;
+
   try {
+    if (!phone) {
+      throw new AppError('Phone number is required', 400);
+    }
+
+    // Normalize the phone number: Remove `+` and extract the last 10 digits
+    const normalizedPhone = phone.replace(/\D/g, '').slice(-10); // Keeps only the last 10 digits
+
     const user = await User.findOne({
       where: {
-        phone: phone,
+        [Op.or]: [
+          { phone: { [Op.like]: `%${normalizedPhone}` } }, // Match last 10 digits
+          { phone: { [Op.eq]: phone } } // Exact match
+        ],
         business_id: req.business_id
       },
       attributes: ['id', 'fname', 'lname', 'email', 'dob', 'country', 'phone', 'points', 'createdAt', 'alleaves_customer_id']
@@ -193,19 +204,21 @@ exports.getUserByPhone = async (req, res, next) => {
       throw new AppError('Not Found', 404, { field: 'user', issue: 'User not found' });
     }
 
-    res.json(user)
+    res.json(user);
   } catch (error) {
-    next(error)
+    next(error);
   }
-}
+};
 
 
 exports.registerUser = async (req, res, next) => {
   try {
-    let { fname, lname, email, dob, country, phone, password, points, business_id } = req.body
+    let { fname, lname, email, dob, country, phone, password, points, business_id, role } = req.body
     let referred_by = null
     let referral_obj = null
     let pw = await dt.hashUserPassword(password)
+
+    role = role ? role : 'customer';
 
     await dt.findReferralByEmail(email)
       .then(referral => {
@@ -223,7 +236,7 @@ exports.registerUser = async (req, res, next) => {
         }
       })
 
-    const newUser = await User.create({ fname, lname, email, dob, country, phone, password: pw, points, business_id, referred_by })
+    const newUser = await User.create({ fname, lname, email, dob, country, phone, password: pw, points, business_id, referred_by, role  })
 
     // handle the flow for updates if there is a referral
     if (referral_obj) {
@@ -265,6 +278,7 @@ exports.registerUser = async (req, res, next) => {
       country: newUser.country,
       phone: newUser.phone,
       points: newUser.points,
+      role: newUser.role,
       createdAt: newUser.createdAt,
     };
 

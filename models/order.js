@@ -40,8 +40,15 @@ const Order = sequelize.define('Order', {
     points_awarded: {
         type: DataTypes.BOOLEAN,
         defaultValue: false,
-      }
-      
+    },
+    points_locked: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0,
+    },
+    total_amount: {
+        type: DataTypes.DECIMAL(10, 4), // Allows up to 10 digits, 4 after the decimal
+        defaultValue: 0.0,
+    }
 }, {
     timestamps: true,
     tableName: 'Orders',

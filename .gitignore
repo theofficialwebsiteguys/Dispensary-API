@@ -130,3 +130,5 @@ dist
 .pnp.*
 
 service-account-key.json
+
+notification-image-key.json

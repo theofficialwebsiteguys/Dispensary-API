@@ -122,6 +122,10 @@ const User = sequelize.define('User',
     alleaves_customer_id: {
       type: DataTypes.STRING,
       allowNull: true
+    },
+    role: {
+      type: DataTypes.STRING,
+      allowNull: true
     }
   },
   {

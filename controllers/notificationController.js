@@ -3,6 +3,8 @@ const admin = require('firebase-admin');
 const path = require('path');
 const AppError = require('../toolbox/appErrorClass');
 const { getUserPushToken } = require('../toolbox/dispensaryTools');
+const { Storage } = require('@google-cloud/storage');
+const multer = require('multer');
 
 // Load service account key JSON file
 if (process.env.GOOGLE_CREDENTIALS) {
@@ -16,6 +18,54 @@ if (!admin.apps.length) {
         credential: admin.credential.cert(serviceAccount),
     });
 }
+
+// Initialize Google Cloud Storage
+const storage = new Storage({
+    projectId: "YOUR_PROJECT_ID",
+    keyFilename: path.join(__dirname, "../notification-image-key.json")
+});
+
+const bucketName = "the-website-guys";
+const bucket = storage.bucket(bucketName);
+
+// Configure Multer to use memory storage for file uploads
+const upload = multer({ storage: multer.memoryStorage() });
+
+/**
+ * Middleware to process file uploads
+ */
+exports.uploadMiddleware = upload.single('file');
+
+/**
+ * Upload Notification Image to Google Cloud Storage
+ */
+exports.uploadNotificationImage = async (req, res, next) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ message: 'No file uploaded' });
+        }
+
+        const fileName = `notifications/${Date.now()}_${req.file.originalname}`;
+        const file = bucket.file(fileName);
+
+        // Upload image buffer
+        await file.save(req.file.buffer, {
+            metadata: { contentType: req.file.mimetype }
+        });
+
+        // Generate a signed URL for temporary access
+        const [signedUrl] = await file.getSignedUrl({
+            action: 'read',
+            expires: Date.now() + 7 * 24 * 60 * 60 * 1000 // Expires in 7 days
+        });
+
+        return res.status(200).json({ imageUrl: signedUrl });
+    } catch (error) {
+        console.error('Upload error:', error);
+        return res.status(500).json({ message: 'Failed to upload image', error });
+    }
+};
+
 
 exports.sendPush = async (req, res, next) => {
   try {
@@ -72,6 +122,79 @@ exports.sendPush = async (req, res, next) => {
   }
 };
 
+
+exports.sendPushToAllUsers = async (req, res, next) => {
+    try {
+        const { title, body, image } = req.body;
+
+        if (!title || !body) {
+            throw new AppError('Invalid request structure', 400, {
+                field: ['title', 'body'],
+                issue: 'Missing required fields'
+            });
+        }
+
+        // Retrieve all users with push tokens
+        const users = await User.findAll({
+            where: { pushToken: { [Op.ne]: null } },
+            attributes: ['id', 'pushToken']
+        });
+
+        if (!users.length) {
+            throw new AppError('No users found with push tokens', 404, {
+                field: 'users',
+                issue: 'No users have a registered push token'
+            });
+        }
+
+        const messages = users.map(user => ({
+            token: user.pushToken,
+            notification: {
+                title,
+                body,
+                ...(image && { image })
+            },
+            android: {
+                priority: "high",
+                notification: {
+                    sound: "default",
+                    ...(image && { image })
+                }
+            },
+            apns: {
+                payload: {
+                    aps: {
+                        sound: "default",
+                        alert: { title, body },
+                        "mutable-content": 1
+                    }
+                }
+            }
+        }));
+
+        // Send push notifications in bulk
+        const fcmResponses = await Promise.all(
+            messages.map(message => admin.messaging().send(message))
+        );
+
+        // Save notifications in database
+        await Promise.all(users.map(user =>
+            saveNotificationToDatabase({ userId: user.id, title, message: body })
+        ));
+
+        return res.status(200).json({
+            message: 'Notifications sent successfully',
+            sentCount: users.length,
+            fcmResponses
+        });
+
+    } catch (error) {
+        next(error);
+    }
+};
+
+
+
 // Save notification in the database
 async function saveNotificationToDatabase(data) {
   try {
@@ -118,9 +241,6 @@ exports.getUserNotifications = async (req, res, next) => {
       }));
   }
 };
-
-
-
 
 
 
@@ -211,4 +331,50 @@ exports.deleteNotification = async (req, res, next) => {
   };
 
 
+  /**
+ * Fetch carousel images from storage
+ */
+exports.getCarouselImages = async (req, res) => {
+    try {
+      const [files] = await bucket.getFiles({ prefix: 'Flower-Power/carousel' });
+      const images = files.map(file => `https://storage.cloud.google.com/${bucketName}/${file.name}`);
   
+      return res.status(200).json({ images });
+    } catch (error) {
+      console.error('Error fetching carousel images:', error);
+      return res.status(500).json({ message: 'Error fetching images', error });
+    }
+  };
+  
+  exports.replaceCarouselImage = async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ message: 'No file uploaded' });
+        }
+
+        const replaceIndex = req.body.replaceIndex;
+        if (replaceIndex === undefined || replaceIndex < 0 || replaceIndex > 10) {
+            return res.status(400).json({ message: 'Invalid index provided' });
+        }
+
+        const fileName = `Flower-Power/carousel${replaceIndex}.jpg`;
+        const file = bucket.file(fileName);
+
+        // Upload the new image
+        await file.save(req.file.buffer, {
+            metadata: { contentType: req.file.mimetype }
+        });
+
+        // Generate a signed URL valid for 1 year
+        const [signedUrl] = await file.getSignedUrl({
+            action: 'read',
+            expires: Date.now() + 365 * 24 * 60 * 60 * 1000 // 1 year
+        });
+
+        return res.status(200).json({ imageUrl: signedUrl, message: `Image at index ${replaceIndex} replaced successfully.` });
+    } catch (error) {
+        console.error('Upload error:', error);
+        return res.status(500).json({ message: 'Failed to replace image', error });
+    }
+};
+

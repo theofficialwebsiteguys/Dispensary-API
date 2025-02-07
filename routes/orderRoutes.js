@@ -12,6 +12,8 @@ router.get('/', orderController.getAllOrders)
 // router.get('/id/:id', orderController.getOrderById)
 // router.get('/pos-order', orderController.getOrderByPosOrderId)
 router.get('/user', orderController.getOrderByUserId)
+router.get('/date-range', orderController.getOrdersByDateRange);
 router.post('/create', orderController.createOrder)
+
 
 module.exports = router;
