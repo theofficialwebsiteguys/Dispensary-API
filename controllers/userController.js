@@ -222,6 +222,8 @@ exports.registerUser = async (req, res, next) => {
         }
       })
 
+    dob = typeof dob === 'string' ? dob : new Date(dob).toISOString().split('T')[0];
+
     const newUser = await User.create({ fname, lname, email, dob, country, phone, password: pw, points, business_id, referred_by })
 
     // handle the flow for updates if there is a referral
