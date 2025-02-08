@@ -196,7 +196,7 @@ exports.getAllProducts = async (req, res) => {
             {
               id: item.id_item,
               posProductId: item.id_item_group,
-              category: (item.category || '').toUpperCase(),
+              category: (item.category || '').toUpperCase() === 'VAPE' ? 'CONCENTRATES' : (item.category || '').toUpperCase(),
               title: item.item || '',
               desc, // Use cleaned product description from item details
               brand: item.brand || '',
@@ -205,9 +205,9 @@ exports.getAllProducts = async (req, res) => {
               weight: item.weight_useable
                 ? `${item.weight_useable} ${item.weight_useable_uom_short || ''}`
                 : '',
-              price: item.price_retail_adult_use || '',
+              price: item.category.toUpperCase() === 'ACCESSORIES' ? item.price_retail || '' : item.price_retail_adult_use || '',
               quantity: itemQuantityMap.get(item.id_item).quantity, // Use merged quantity
-              image: details.image || '',
+              image: item.category.toUpperCase() === 'VAPE' ? '' : details.image || '',
             }
           ];
         })
