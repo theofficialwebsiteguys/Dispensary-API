@@ -123,16 +123,23 @@ exports.getAllProducts = async (req, res) => {
       };
     };
 
-    const fetchAllPages = async (endpoint) => {
+    const fetchAllPages = async (endpoint, filters = []) => {
       let skip = 0;
       let allResults = [];
-
+    
       while (true) {
         console.log(`Fetching ${endpoint} with skip=${skip}, take=${take}`);
-
+    
         const response = await axios.post(
           `https://app.alleaves.com/api${endpoint}`,
-          { skip, take },
+          {
+            skip,
+            take,
+            filter: {
+              logic: "and",
+              filters: filters
+            }
+          },
           {
             headers: {
               'Authorization': `Bearer ${alleavesToken}`,
@@ -141,19 +148,25 @@ exports.getAllProducts = async (req, res) => {
             }
           }
         );
-
+    
         const data = response.data || [];
         if (data.length === 0) break; // Stop if no more results
-
+    
         allResults.push(...data);
         skip += take;
       }
-
+    
       return allResults;
     };
+    
 
     // 1. Fetch all inventory items
-    const inventoryData = await fetchAllPages('/inventory/search');
+    // Fetch inventory items with id_area = 1000 and has_available_inventory = true
+    const inventoryData = await fetchAllPages('/inventory/search', [
+      { field: 'id_area', value: 1000, operator: 'eq' },
+      { field: 'has_available_inventory', value: true, operator: 'eq' }
+    ]);
+
     if (inventoryData.length === 0) {
       console.log('No inventory data found.');
       return res.json([]);
@@ -205,7 +218,9 @@ exports.getAllProducts = async (req, res) => {
               weight: item.weight_useable
                 ? `${item.weight_useable} ${item.weight_useable_uom_short || ''}`
                 : '',
-              price: item.category.toUpperCase() === 'ACCESSORIES' ? item.price_retail || '' : item.price_retail_adult_use || '',
+              price: item.price_retail_adult_use && item.price_retail_adult_use !== 0 
+                ? item.price_retail_adult_use 
+                : item.price_retail || '',              
               quantity: itemQuantityMap.get(item.id_item).quantity, // Use merged quantity
               image: item.category.toUpperCase() === 'VAPE' ? '' : details.image || '',
             }
