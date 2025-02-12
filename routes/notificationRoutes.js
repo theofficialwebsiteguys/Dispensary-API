@@ -6,6 +6,8 @@ const router = express.Router();
 router.get('/all', notificationController.getUserNotifications);
 
 router.post('/sendPushToAll', notificationController.sendPushToAllUsers);
+router.post('/sendPushByCategory', notificationController.notifyUsersByCategory);
+
 router.post('/send-push', notificationController.sendPush);
 router.post('/upload-image', notificationController.uploadMiddleware, notificationController.uploadNotificationImage);
 

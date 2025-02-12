@@ -8,6 +8,7 @@ const { validationResult, body } = require('express-validator');
 const { User, Session, Business } = require('../models');
 const { Op, ValidationError } = require('sequelize');
 require('dotenv').config();
+const Order = require('../models/order');
 
 const JWT_SECRET = process.env.JWT_SECRET
 const SESSION_EXPIRY_HOURS = 168; // e.g., 7 days
@@ -125,18 +126,32 @@ exports.logout = async (req, res, next) => {
 exports.getAllUsers = async (req, res, next) => {
   try {
     const users = await User.findAll({
-      attributes: ['id', 'fname', 'lname', 'email', 'dob', 'country', 'phone', 'points', 'createdAt', 'alleaves_customer_id', 'role']
+      attributes: [
+        'id', 'fname', 'lname', 'email', 'dob', 'country', 'phone',
+        'points', 'createdAt', 'alleaves_customer_id', 'role'
+      ],
+      include: [
+        {
+          model: Order,
+          as: 'Orders',
+          attributes: [
+            'id', 'pos_order_id', 'points_add', 'points_redeem',
+            'complete', 'points_awarded', 'points_locked', 'total_amount', 'createdAt'
+          ],
+        }
+      ]
     });
 
-    if (!users) {
+    if (!users.length) {
       throw new AppError('Not Found', 404, { field: 'user', issue: 'Error fetching users' });
     }
 
-    res.json(users)
+    res.json(users);
   } catch (error) {
-    next(error)
+    next(error);
   }
-}
+};
+
 
 
 exports.getUserById = async (req, res, next) => {

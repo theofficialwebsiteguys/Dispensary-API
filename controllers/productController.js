@@ -210,7 +210,7 @@ exports.getAllProducts = async (req, res) => {
               id: item.id_item,
               posProductId: item.id_item_group,
               category: (item.category || '').toUpperCase() === 'VAPE' ? 'CONCENTRATES' : (item.category || '').toUpperCase(),
-              title: item.item || '',
+              title: item.item ? item.item.replace(/vape/gi, 'Extract pen').trim() : '',
               desc, // Use cleaned product description from item details
               brand: item.brand || '',
               strainType: item.strain || '',

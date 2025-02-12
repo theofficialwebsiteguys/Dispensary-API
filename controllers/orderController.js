@@ -6,10 +6,11 @@ const userController = require('../controllers/userController')
 const toolbox = require('../toolbox/dispensaryTools')
 const { Op } = require('sequelize');
 const User = require('../models/user');
+const OrderItem = require('../models/orderItem');
 
 exports.createOrder = async (req, res, next) => {
     try {
-        let { user_id, pos_order_id, points_add, points_redeem, amount } = req.body
+        let { user_id, pos_order_id, points_add, points_redeem, amount, cart } = req.body
         let pointsAdd = Number(Math.floor(points_add))
         let pointsRedeem = Number(Math.floor(points_redeem))
         const newOrder = await Order.create({ user_id, pos_order_id, points_add: pointsAdd, points_redeem: pointsRedeem, points_locked: pointsRedeem, total_amount: amount })
@@ -23,6 +24,19 @@ exports.createOrder = async (req, res, next) => {
           points_locked: newOrder.points_redeem,
           amount: newOrder.amount
         };
+
+        const orderItems = cart.map(item => ({
+          order_id: newOrder.id,
+          item_id: item.id, // Convert to string to match database schema
+          title: item.title,
+          brand: item.brand,
+          category: item.category,
+          price: item.price,
+          quantity: item.quantity
+      }));
+
+      // Insert items into OrderItem table
+      await OrderItem.bulkCreate(orderItems);
 
         if (pointsRedeem && pointsRedeem > 0) {  
 

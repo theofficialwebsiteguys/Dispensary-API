@@ -7,6 +7,7 @@ const User = require('./user')
 const Session = require('./session')
 const Notification = require('./notification')
 const Order = require('./order')
+const OrderItem = require('./orderItem')
 
 // FK for business_id on User model
 User.belongsTo(Business, { foreignKey: 'business_id' })
@@ -33,8 +34,11 @@ Notification.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 User.hasMany(Notification, { foreignKey: 'userId', as: 'notifications' });
 
 // FK for sessionId on Order model
-Order.belongsTo(User, { foreignKey: 'user_id' });
-User.hasMany(Order, { foreignKey: 'user_id' });
+Order.belongsTo(User, { foreignKey: 'user_id', as: 'User' });
+User.hasMany(Order, { foreignKey: 'user_id', as: 'Orders' });
+
+Order.hasMany(OrderItem, { foreignKey: 'order_id', as: 'items' });
+OrderItem.belongsTo(Order, { foreignKey: 'order_id' });
 
 // Sync all models with the database
 sequelize.sync({ alter: true }) // change to force: true to drop all data and tables and recreate based on model definitions

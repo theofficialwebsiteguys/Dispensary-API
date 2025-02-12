@@ -189,6 +189,7 @@ async function checkAlleavesOrder(pos_order_id) {
           order_json["cancel"] = data.cancel
           order_json["status"] = data.status
           order_json["paid_in_full"] = data.paid_in_full
+          order_json["status_list"] = data.status_list
 
           data.items.forEach((item) => {
             if (!items_json[`${item.id_inventory_item}`]) {

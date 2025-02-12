@@ -5,6 +5,9 @@ const AppError = require('../toolbox/appErrorClass');
 const { getUserPushToken } = require('../toolbox/dispensaryTools');
 const { Storage } = require('@google-cloud/storage');
 const multer = require('multer');
+const OrderItem = require('../models/orderItem')
+const { Op } = require('sequelize');
+const Order = require('../models/order');
 
 // Load service account key JSON file
 if (process.env.GOOGLE_CREDENTIALS) {
@@ -194,6 +197,76 @@ exports.sendPushToAllUsers = async (req, res, next) => {
 };
 
 
+exports.notifyUsersByCategory = async (req, res, next) => {
+    try {
+        const { category, title, body } = req.body;
+
+        if (!category || !title || !body) {
+            return res.status(400).json({
+                error: 'Missing required fields: category, title, and body'
+            });
+        }
+
+        // Find all orders that have items in the given category
+        const ordersWithCategory = await Order.findAll({
+            attributes: ['id', 'user_id'],
+            include: [{
+                model: OrderItem,
+                as: 'items', // ✅ Use the alias here!
+                attributes: ['category'],
+                where: { category }, // Filter by category
+                required: true // Ensures we only get orders with matching OrderItems
+            }]
+        });
+
+        if (!ordersWithCategory.length) {
+            return res.status(404).json({ message: `No users found for category: ${category}` });
+        }
+
+        // Extract unique user IDs from the orders
+        const userIds = [...new Set(ordersWithCategory.map(order => order.user_id))];
+
+        // Get users who have ordered from this category
+        const users = await User.findAll({
+            attributes: ['id', 'pushToken'],
+            where: { id: userIds }
+        });
+
+        // Extract push tokens
+        const pushTokens = users
+            .map(user => user.pushToken)
+            .filter(token => token); // Remove null/undefined tokens
+
+        if (pushTokens.length === 0) {
+            return res.status(404).json({ message: `No users with push tokens found for category: ${category}` });
+        }
+
+        // Construct FCM multicast message
+        const message = {
+            tokens: pushTokens,
+            notification: { title, body },
+            android: { priority: "high", notification: { sound: "default" } },
+            apns: {
+                payload: { aps: { sound: "default", alert: { title, body } } }
+            }
+        };
+
+        // ✅ Use sendEachForMulticast() instead of sendMulticast()
+        const fcmResponse = await admin.messaging().sendEachForMulticast(message);
+
+        res.status(200).json({
+            message: `Notifications sent to users who ordered category: ${category}`,
+            successCount: fcmResponse.successCount,
+            failureCount: fcmResponse.failureCount
+        });
+
+    } catch (error) {
+        console.error('Error notifying users:', error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
+
 
 // Save notification in the database
 async function saveNotificationToDatabase(data) {
@@ -331,22 +404,28 @@ exports.deleteNotification = async (req, res, next) => {
   };
 
 
-  /**
- * Fetch carousel images from storage
- */
-exports.getCarouselImages = async (req, res) => {
+  exports.getCarouselImages = async (req, res) => {
     try {
-      const [files] = await bucket.getFiles({ prefix: 'Flower-Power/carousel' });
-      const images = files.map(file => `https://storage.cloud.google.com/${bucketName}/${file.name}`);
-  
-      return res.status(200).json({ images });
+        const [files] = await bucket.getFiles({ prefix: 'Flower-Power/' });
+
+        if (!files.length) {
+            return res.status(404).json({ message: "No images found in storage." });
+        }
+
+        // Filter out non-image entries (like empty folder references)
+        const images = files
+            .map(file => `https://storage.googleapis.com/${bucketName}/${file.name}`)
+            .filter(url => url.match(/\.(jpg|jpeg|png|gif)$/i)); // Only include images
+
+        return res.status(200).json({ images });
     } catch (error) {
-      console.error('Error fetching carousel images:', error);
-      return res.status(500).json({ message: 'Error fetching images', error });
+        console.error('Error fetching carousel images:', error);
+        return res.status(500).json({ message: 'Error fetching images', error });
     }
-  };
-  
-  exports.replaceCarouselImage = async (req, res) => {
+};
+
+
+exports.replaceCarouselImage = async (req, res) => {
     try {
         if (!req.file) {
             return res.status(400).json({ message: 'No file uploaded' });
@@ -360,21 +439,25 @@ exports.getCarouselImages = async (req, res) => {
         const fileName = `Flower-Power/carousel${replaceIndex}.jpg`;
         const file = bucket.file(fileName);
 
+        // Delete the old image first to prevent conflicts
+        await file.delete({ ignoreNotFound: true });
+
         // Upload the new image
         await file.save(req.file.buffer, {
-            metadata: { contentType: req.file.mimetype }
+            metadata: {
+                contentType: req.file.mimetype,
+                cacheControl: 'no-cache, max-age=0, must-revalidate' // Prevent caching issues
+            }
         });
 
-        // Generate a signed URL valid for 1 year
-        const [signedUrl] = await file.getSignedUrl({
-            action: 'read',
-            expires: Date.now() + 365 * 24 * 60 * 60 * 1000 // 1 year
-        });
+        // Construct the public URL (since images are public)
+        const publicUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
 
-        return res.status(200).json({ imageUrl: signedUrl, message: `Image at index ${replaceIndex} replaced successfully.` });
+        return res.status(200).json({ imageUrl: publicUrl, message: `Image at index ${replaceIndex} replaced successfully.` });
     } catch (error) {
         console.error('Upload error:', error);
         return res.status(500).json({ message: 'Failed to replace image', error });
     }
 };
+
 

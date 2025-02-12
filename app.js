@@ -19,11 +19,12 @@ const sessionRoutes = require('./routes/sessionRoutes')
 const app = express()
 
 // Enable CORS
-// const corsOptions = {
-//   origin: ['http://localhost:8100', 'https://localhost'], // Allow requests from Ionic frontend
-//   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-//   credentials: true,
-// };
+const corsOptions = {
+  origin: ['http://localhost:8100', 'http://localhost:8101', 'https://localhost'], // Allow requests from Ionic frontend
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  credentials: true,
+};
+app.use(cors(corsOptions))
 
 // Middleware
 app.use(express.json())
