@@ -13,5 +13,6 @@ router.get('/id/:id', businessController.getBusinessById)
 router.post('/register', businessController.registerBusiness)
 router.delete('/delete/:id', businessController.deleteBusiness)
 router.put('/update', businessController.updateBusiness)
+router.post('/send-email', businessController.sendEmailToBusiness);
 
 module.exports = router;

@@ -9,6 +9,7 @@ const router = express.Router()
 router.use(authenticateRequest);
 
 router.get('/', orderController.getAllOrders)
+router.get('/employees', orderController.getOrdersByEmployees)
 // router.get('/id/:id', orderController.getOrderById)
 // router.get('/pos-order', orderController.getOrderByPosOrderId)
 router.get('/user', orderController.getOrderByUserId)

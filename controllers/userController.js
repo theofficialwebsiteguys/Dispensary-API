@@ -125,25 +125,22 @@ exports.logout = async (req, res, next) => {
 
 exports.getAllUsers = async (req, res, next) => {
   try {
+    if (!req.business_id) {
+      throw new AppError('Bad Request', 400, { field: 'business_id', issue: 'Missing business_id in request' });
+    }
+
     const users = await User.findAll({
       attributes: [
         'id', 'fname', 'lname', 'email', 'dob', 'country', 'phone',
         'points', 'createdAt', 'alleaves_customer_id', 'role'
       ],
-      include: [
-        {
-          model: Order,
-          as: 'Orders',
-          attributes: [
-            'id', 'pos_order_id', 'points_add', 'points_redeem',
-            'complete', 'points_awarded', 'points_locked', 'total_amount', 'createdAt'
-          ],
-        }
-      ]
+      where: {
+        business_id: req.business_id
+      }
     });
 
     if (!users.length) {
-      throw new AppError('Not Found', 404, { field: 'user', issue: 'Error fetching users' });
+      throw new AppError('Not Found', 404, { field: 'user', issue: 'No users found for this business' });
     }
 
     res.json(users);
@@ -151,6 +148,7 @@ exports.getAllUsers = async (req, res, next) => {
     next(error);
   }
 };
+
 
 
 

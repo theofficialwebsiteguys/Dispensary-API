@@ -16,6 +16,14 @@ const Order = sequelize.define('Order', {
           key: 'id',
         },
     },
+    employee_id: { 
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        references: {
+            model: 'Users', 
+            key: 'id',
+        },
+    },
     pos_order_id: {
         type: DataTypes.STRING,
     },
@@ -48,6 +56,10 @@ const Order = sequelize.define('Order', {
     total_amount: {
         type: DataTypes.DECIMAL(10, 4), // Allows up to 10 digits, 4 after the decimal
         defaultValue: 0.0,
+    },
+    business_id: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
     }
 }, {
     timestamps: true,

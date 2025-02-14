@@ -1,6 +1,16 @@
 // API ROUTE: ./api/businesses
 const Business = require('../models/business');
 const AppError = require('../toolbox/appErrorClass');
+const nodemailer = require('nodemailer');
+require('dotenv').config();
+
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
+  }
+});
 
 
 exports.getAllBusinesses = async (req, res, next) => {
@@ -16,6 +26,7 @@ exports.getAllBusinesses = async (req, res, next) => {
     next(error)
   }
 };
+
 
 
 exports.getBusinessById = async (req, res, next) => {
@@ -96,4 +107,41 @@ exports.updateBusiness = async (req, res, next) => {
   catch (error) {
     next(error)
   }
+
 }
+
+exports.sendEmailToBusiness = async (req, res, next) => {
+  try {
+    const { subject, message } = req.body; 
+
+    // Find the business by ID
+    const business = await Business.findByPk(req.id);
+
+    if (!business) {
+      throw new AppError('Not Found', 404, { field: 'business id', issue: 'Business Not Found' });
+    }
+
+    if (!business.email) {
+      throw new AppError('Bad Request', 400, { field: 'email', issue: 'Business does not have an email address' });
+    }
+
+    // Email options
+    const mailOptions = {
+      from: process.env.GOOGLE_EMAIL,
+      to: business.email,
+      subject: subject || 'Important Business Notification',
+      text: message || 'Hello, this is a message from our system.',
+    };
+
+    // Send email
+    const info = await transporter.sendMail(mailOptions);
+
+    res.status(200).json({
+      message: 'Email sent successfully',
+      emailInfo: info
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};

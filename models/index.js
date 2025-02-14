@@ -34,8 +34,12 @@ Notification.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 User.hasMany(Notification, { foreignKey: 'userId', as: 'notifications' });
 
 // FK for sessionId on Order model
-Order.belongsTo(User, { foreignKey: 'user_id', as: 'User' });
+Order.belongsTo(User, { foreignKey: 'user_id', as: 'Customer' });
+Order.belongsTo(User, { foreignKey: 'employee_id', as: 'Employee' });
+
 User.hasMany(Order, { foreignKey: 'user_id', as: 'Orders' });
+User.hasMany(Order, { foreignKey: 'employee_id', as: 'EmployeeOrders' });
+
 
 Order.hasMany(OrderItem, { foreignKey: 'order_id', as: 'items' });
 OrderItem.belongsTo(Order, { foreignKey: 'order_id' });
