@@ -3,6 +3,8 @@ const Business = require('../models/business');
 const AppError = require('../toolbox/appErrorClass');
 const nodemailer = require('nodemailer');
 require('dotenv').config();
+const fs = require('fs');
+const path = require('path');
 
 const transporter = nodemailer.createTransport({
   service: 'gmail',
@@ -141,6 +143,67 @@ exports.sendEmailToBusiness = async (req, res, next) => {
       emailInfo: info
     });
 
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+
+exports.sendCSVEmail = async (req, res, next) => {
+  try {
+    const { csvContent } = req.body;
+
+    if (!csvContent) {
+      return res.status(400).json({ message: 'CSV data is required' });
+    }
+
+    const uploadsDir = path.join(__dirname, '../uploads');
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir, { recursive: true }); // Create directory if it doesn't exist
+    }
+
+
+    // Find the business by ID
+    const business = await Business.findByPk(req.business_id);
+
+    if (!business) {
+      throw new AppError('Not Found', 404, { field: 'business id', issue: 'Business Not Found' });
+    }
+
+    if (!business.email) {
+      throw new AppError('Bad Request', 400, { field: 'email', issue: 'Business does not have an email address' });
+    }
+
+    // Generate a unique filename
+    const timestamp = new Date().toISOString().replace(/[:.-]/g, '_');
+    const fileName = `exported_data_${timestamp}.csv`;
+    const filePath = path.join(__dirname, '../uploads', fileName);
+
+    // Save CSV file on the server temporarily
+    fs.writeFileSync(filePath, csvContent);
+
+    // Email options
+    const mailOptions = {
+      from: process.env.GOOGLE_EMAIL,
+      to: business.email, // Admin email address
+      subject: 'Exported CSV Data',
+      text: 'Attached is the exported CSV file.',
+      attachments: [
+        {
+          filename: fileName,
+          path: filePath
+        }
+      ]
+    };
+
+    // Send the email
+    await transporter.sendMail(mailOptions);
+
+    // Delete the temporary file after sending the email
+    fs.unlinkSync(filePath);
+
+    res.status(200).json({ message: 'Email sent successfully with CSV attachment' });
   } catch (error) {
     next(error);
   }

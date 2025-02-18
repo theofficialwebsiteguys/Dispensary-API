@@ -110,6 +110,8 @@ exports.getAllProducts = async (req, res) => {
     const products = [];
     const alleavesToken = await toolbox.getAlleavesApiToken();
 
+    const keepVapeCategory = req.query.keepVapeCategory === 'true';
+
     const extractTHCAndDescription = (description) => {
       if (!description) return { thc: null, desc: '' };
 
@@ -204,13 +206,18 @@ exports.getAllProducts = async (req, res) => {
           const details = itemDetailsMap.get(item.id_item) || {};
           const { thc, desc } = extractTHCAndDescription(details.product_description || '');
 
+          let category = (item.category || '').toUpperCase();
+          if (!keepVapeCategory && category === 'VAPE') {
+            category = 'CONCENTRATES';
+          }
+
           return [
             item.id_item, // Use item ID as the unique key
             {
               id: item.id_item,
               posProductId: item.id_item_group,
-              category: (item.category || '').toUpperCase() === 'VAPE' ? 'CONCENTRATES' : (item.category || '').toUpperCase(),
-              title: item.item ? item.item.replace(/vape/gi, 'Extract pen').trim() : '',
+              category,
+              title: item.item && !keepVapeCategory ? item.item.replace(/vape/gi, 'Extract pen').trim() : item.item,
               desc, // Use cleaned product description from item details
               brand: item.brand || '',
               strainType: item.strain || '',
@@ -222,7 +229,7 @@ exports.getAllProducts = async (req, res) => {
                 ? item.price_retail_adult_use 
                 : item.price_retail || '',              
               quantity: itemQuantityMap.get(item.id_item).quantity, // Use merged quantity
-              image: item.category.toUpperCase() === 'VAPE' ? '' : details.image || '',
+              image: category === 'VAPE' && !keepVapeCategory ? '' : details.image || '',
             }
           ];
         })
