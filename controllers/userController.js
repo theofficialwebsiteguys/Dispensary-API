@@ -249,6 +249,7 @@ exports.registerUser = async (req, res, next) => {
         }
       })
 
+    dob = dob.split('T')[0];
     const newUser = await User.create({ fname, lname, email, dob, country, phone, password: pw, points, business_id, referred_by, role  })
 
     // handle the flow for updates if there is a referral

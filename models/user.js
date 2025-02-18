@@ -29,7 +29,7 @@ const User = sequelize.define('User',
       },
     },
     dob: {
-      type: DataTypes.DATE,
+      type: DataTypes.DATEONLY,
       allowNull: false,
       validate: {
         isDate: {

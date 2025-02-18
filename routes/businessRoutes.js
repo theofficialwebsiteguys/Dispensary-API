@@ -14,5 +14,6 @@ router.post('/register', businessController.registerBusiness)
 router.delete('/delete/:id', businessController.deleteBusiness)
 router.put('/update', businessController.updateBusiness)
 router.post('/send-email', businessController.sendEmailToBusiness);
+router.post('/send-csv-email', businessController.sendCSVEmail);
 
 module.exports = router;
